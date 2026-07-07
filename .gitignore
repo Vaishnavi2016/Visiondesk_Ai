@@ -1,0 +1,12 @@
+venv/
+__pycache__/
+*.pyc
+uploads/
+static/results/
+.env
+*.zip
+*.pt
+venv/
+__pycache__/
+uploads/
+static/results/

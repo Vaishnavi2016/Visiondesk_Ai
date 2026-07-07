@@ -1,0 +1,13 @@
+train: ../train/images
+val: ../valid/images
+test: ../test/images
+
+nc: 10
+names: ['Person', 'boots', 'gloves', 'goggles', 'helmet', 'no_gloves', 'no_goggle', 'no_helmet', 'none', 'vest']
+
+roboflow:
+  workspace: training-rs3kg
+  project: ppe-detection-rrq9i
+  version: 1
+  license: CC BY 4.0
+  url: https://universe.roboflow.com/training-rs3kg/ppe-detection-rrq9i/dataset/1

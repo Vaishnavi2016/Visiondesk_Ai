@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VisionDesk AI | Ingestion Control Node</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+        body { background-color: #0f1219; color: #e2e8f0; line-height: 1.5; }
+        
+        nav { background: rgba(22, 27, 38, 0.8); backdrop-filter: blur(10px); padding: 18px 40px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05); position: sticky; top: 0; z-index: 100; }
+        nav h1 { font-size: 22px; font-weight: 700; background: linear-gradient(to right, #63b3ed, #4fd1c5); -webkit-background-clip: text; -webkit-text-fill-color: transparent; cursor: pointer; }
+        .nav-links { display: flex; gap: 20px; align-items: center; }
+        .nav-item { color: #a0aec0; text-decoration: none; font-size: 14px; font-weight: 500; transition: color 0.2s; }
+        .nav-item:hover, .nav-item.active { color: #4fd1c5; }
+        .btn-logout { background: transparent; border: 1px solid rgba(229, 62, 62, 0.4); color: #fc8181; padding: 8px 16px; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; text-decoration: none; transition: all 0.2s; }
+        .btn-logout:hover { background: #e53e3e; color: #fff; }
+
+        .main-container { max-width: 800px; margin: 60px auto; padding: 0 24px; }
+        .ingest-card { background: #161b26; border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 40px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); text-align: center; }
+        .ingest-card h3 { font-size: 24px; font-weight: 600; margin-bottom: 12px; color: #fff; }
+        .ingest-card p { color: #a0aec0; font-size: 14px; margin-bottom: 32px; }
+        
+        .upload-zone { border: 2px dashed rgba(79, 209, 197, 0.3); border-radius: 12px; padding: 60px 40px; text-align: center; background: rgba(15, 18, 25, 0.6); cursor: pointer; transition: all 0.3s; }
+        .upload-zone:hover { border-color: #4fd1c5; background: rgba(22, 27, 38, 0.5); }
+        .upload-zone input { display: none; }
+        .upload-zone label { color: #fff; font-size: 18px; font-weight: 600; cursor: pointer; display: block; margin-bottom: 8px; }
+        .upload-zone span { display: block; font-size: 13px; color: #718096; }
+
+        .btn-submit-analysis { width: 100%; margin-top: 32px; padding: 16px; background: #3182ce; color: white; border: 0; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; transition: background 0.2s; }
+        .btn-submit-analysis:hover { background: #2b6cb0; }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <h1 onclick="window.location.href='/'">VisionDesk AI</h1>
+        <div class="nav-links">
+            <a href="/" class="nav-item">Compliance Ledger</a>
+            <a href="/upload-feed" class="nav-item active">Ingest Media Feed</a>
+            <a href="/logout" class="btn-logout">Terminate Session</a>
+        </div>
+    </nav>
+
+    <div class="main-container">
+        <div class="ingest-card">
+            <h3>Telemetry Media Ingestion Pipeline</h3>
+            <p>Deploy surveillance asset nodes into the custom computer vision engine for automated object verification.</p>
+            
+            <form action="/upload-feed" method="POST" enctype="multipart/form-data">
+                <div class="upload-zone" onclick="document.getElementById('fileInput').click()">
+                    <input type="file" name="file" id="fileInput" required onchange="updateFileName(this)">
+                    <label id="uploadLabel">📤 Select System Telemetry File</label>
+                    <span id="uploadSubtext">Drag & drop image or video assets directly here</span>
+                </div>
+                <button type="submit" class="btn-submit-analysis">Initiate Structural Audit Analysis</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function updateFileName(input) {
+            const label = document.getElementById('uploadLabel');
+            const subtext = document.getElementById('uploadSubtext');
+            if (input.files && input.files.length > 0) {
+                label.innerText = "Target Asset Staged Successfully";
+                label.style.color = "#4fd1c5";
+                subtext.innerText = "Selected File: " + input.files[0].name;
+                subtext.style.color = "#fff";
+            }
+        }
+    </script>
+</body>
+</html>

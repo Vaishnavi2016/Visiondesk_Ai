@@ -1,0 +1,17 @@
+train: C:/VisionDesk_AI/ppe_dataset/train/images
+val: C:/VisionDesk_AI/ppe_dataset/valid/images
+test: C:/VisionDesk_AI/ppe_dataset/test/images
+
+nc: 10
+names: [
+  'Hardhat', 
+  'Mask', 
+  'NO-Hardhat', 
+  'NO-Mask', 
+  'NO-Safety Vest', 
+  'Person', 
+  'Safety Cone', 
+  'Safety Vest', 
+  'machinery', 
+  'vehicle'
+]

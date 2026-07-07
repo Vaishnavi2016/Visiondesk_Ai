@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VisionDesk | HSE Provisioning Portal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+        body { background: radial-gradient(circle at top right, #1a202c, #0f1219); color: #f7fafc; height: 100vh; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        .auth-container { width: 100%; max-width: 450px; padding: 40px; background: rgba(26, 32, 44, 0.65); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px; box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
+        .brand { text-align: center; margin-bottom: 32px; }
+        .brand h2 { font-size: 28px; font-weight: 700; letter-spacing: -0.5px; background: linear-gradient(to right, #38a169, #4fd1c5); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .brand p { color: #718096; font-size: 14px; margin-top: 6px; }
+        .form-group { margin-bottom: 24px; }
+        .form-group label { display: block; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: #a0aec0; margin-bottom: 8px; font-weight: 600; }
+        .form-group input { width: 100%; padding: 14px; background: rgba(15, 18, 25, 0.8); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; color: #fff; font-size: 15px; transition: all 0.3s ease; }
+        .form-group input:focus { outline: none; border-color: #38a169; box-shadow: 0 0 0 3px rgba(56, 161, 105, 0.2); }
+        .btn-submit { width: 100%; padding: 14px; background: #38a169; color: #fff; border: 0; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; transition: background 0.2s ease; margin-top: 10px; }
+        .btn-submit:hover { background: #2f855a; }
+        .auth-footer { text-align: center; margin-top: 24px; font-size: 14px; color: #a0aec0; }
+        .auth-footer a { color: #4fd1c5; text-decoration: none; font-weight: 600; }
+        .auth-footer a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <div class="brand">
+            <h2>VisionDesk AI</h2>
+            <p>HSE Officer Access Provisioning</p>
+        </div>
+        <form method="POST">
+            <div class="form-group">
+                <label>Operator Username Identifier</label>
+                <input type="text" name="username" placeholder="e.g., hse_officer_01" required autocomplete="off">
+            </div>
+            <div class="form-group">
+                <label>Account Security Password</label>
+                <input type="password" name="password" placeholder="••••••••" required>
+            </div>
+            <button type="submit" class="btn-submit">Provision Account Access</button>
+        </form>
+        <div class="auth-footer">
+            Already registered? <a href="/login">Authenticate Here</a>
+        </div>
+    </div>
+</body>
+</html>
