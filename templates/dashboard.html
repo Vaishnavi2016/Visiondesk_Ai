@@ -1,127 +1,189 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VisionDesk AI | Site Compliance Management Console</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>VisionDesk AI · Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
-        body { background-color: #0f1219; color: #e2e8f0; line-height: 1.5; padding-bottom: 60px; }
-        
-        /* Navigation Matrix Bar */
-        nav { background: rgba(22, 27, 38, 0.8); backdrop-filter: blur(10px); padding: 18px 40px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05); position: sticky; top: 0; z-index: 100; }
-        nav h1 { font-size: 22px; font-weight: 700; background: linear-gradient(to right, #63b3ed, #4fd1c5); -webkit-background-clip: text; -webkit-text-fill-color: transparent; cursor: pointer; }
-        .nav-links { display: flex; gap: 24px; align-items: center; }
-        .nav-item { color: #a0aec0; text-decoration: none; font-size: 14px; font-weight: 500; transition: color 0.2s; }
-        .nav-item:hover, .nav-item.active { color: #4fd1c5; }
-        .user-meta-tag { color: #cbd5e0; font-size: 13px; }
-        .btn-logout { background: transparent; border: 1px solid rgba(229, 62, 62, 0.4); color: #fc8181; padding: 8px 16px; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; text-decoration: none; transition: all 0.2s; }
-        .btn-logout:hover { background: #e53e3e; color: #fff; }
-
-        /* Full Width Main Layout Container */
-        .main-container { max-width: 1200px; margin: 40px auto; padding: 0 24px; }
-
-        /* System Audit Logs */
-        .logs-column h3 { font-size: 22px; font-weight: 600; color: #fff; margin-bottom: 4px; }
-        .logs-column > p { color: #a0aec0; font-size: 13px; margin-bottom: 32px; }
-
-        .record-card { background: #161b26; border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 24px; margin-bottom: 24px; display: grid; grid-template-columns: 280px 1fr; gap: 28px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
-        
-        /* Media Output Windows */
-        .media-frame { width: 100%; border-radius: 8px; overflow: hidden; background: #0f1219; border: 1px solid rgba(255,255,255,0.03); display: flex; align-items: center; }
-        .media-frame img, .media-frame video { width: 100%; height: auto; display: block; }
-
-        /* Report Metadata Styling */
+        /* All styles remain identical – no changes needed */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #f4f6fa; font-family: 'Inter', sans-serif; color: #1e293b; min-height: 100vh; padding-bottom: 40px; }
+        .navbar { background: #ffffff; box-shadow: 0 2px 12px rgba(0,0,0,0.04); padding: 16px 40px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 50; border-bottom: 1px solid #e9edf2; }
+        .brand { font-size: 24px; font-weight: 700; color: #0f172a; letter-spacing: -0.4px; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+        .brand span { color: #2563eb; }
+        .nav-links { display: flex; align-items: center; gap: 28px; }
+        .nav-links a { color: #475569; text-decoration: none; font-size: 14px; font-weight: 500; transition: color 0.2s; display: flex; align-items: center; gap: 6px; }
+        .nav-links a:hover, .nav-links a.active { color: #2563eb; }
+        .nav-links a.active { font-weight: 600; }
+        .user-meta { color: #475569; font-size: 14px; display: flex; align-items: center; gap: 6px; }
+        .user-meta i { color: #2563eb; }
+        .btn-logout { background: transparent; border: 1px solid #e2e8f0; color: #475569; padding: 6px 16px; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; text-decoration: none; transition: all 0.2s; }
+        .btn-logout:hover { background: #fee2e2; border-color: #f87171; color: #b91c1c; }
+        .container { max-width: 1280px; margin: 32px auto 0; padding: 0 24px; }
+        .hero { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; flex-wrap: wrap; gap: 16px; }
+        .hero h1 { font-size: 28px; font-weight: 700; color: #0f172a; letter-spacing: -0.5px; }
+        .hero h1 small { font-size: 16px; font-weight: 400; color: #64748b; margin-left: 12px; }
+        .hero .actions { display: flex; gap: 12px; }
+        .btn-primary { background: #2563eb; color: #fff; border: none; padding: 10px 24px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; text-decoration: none; transition: background 0.2s, box-shadow 0.2s; display: inline-flex; align-items: center; gap: 8px; }
+        .btn-primary:hover { background: #1d4ed8; box-shadow: 0 4px 14px rgba(37,99,235,0.3); }
+        .btn-secondary { background: #f1f5f9; color: #1e293b; border: 1px solid #e2e8f0; padding: 10px 24px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; text-decoration: none; transition: background 0.2s; display: inline-flex; align-items: center; gap: 8px; }
+        .btn-secondary:hover { background: #e2e8f0; }
+        .stats-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 24px; margin-bottom: 40px; }
+        .stat-card { background: #ffffff; border-radius: 16px; padding: 24px 28px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); border: 1px solid #e9edf2; transition: transform 0.2s, box-shadow 0.2s; display: flex; align-items: center; gap: 16px; }
+        .stat-card:hover { transform: translateY(-4px); box-shadow: 0 12px 30px rgba(0,0,0,0.06); }
+        .stat-icon { width: 52px; height: 52px; background: #eff6ff; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; color: #2563eb; flex-shrink: 0; }
+        .stat-card.violations .stat-icon { background: #fef2f2; color: #dc2626; }
+        .stat-card.compliance .stat-icon { background: #f0fdf4; color: #16a34a; }
+        .stat-info h4 { font-size: 14px; font-weight: 500; color: #64748b; margin-bottom: 4px; }
+        .stat-info .value { font-size: 28px; font-weight: 700; color: #0f172a; }
+        .ledger-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
+        .ledger-header h2 { font-size: 22px; font-weight: 600; color: #0f172a; }
+        .ledger-header .sub { color: #64748b; font-size: 14px; font-weight: 400; margin-top: 2px; }
+        .record-card { background: #ffffff; border-radius: 16px; padding: 24px; margin-bottom: 28px; box-shadow: 0 4px 12px rgba(0,0,0,0.02); border: 1px solid #e9edf2; display: grid; grid-template-columns: 280px 1fr; gap: 28px; transition: box-shadow 0.25s, transform 0.2s; }
+        .record-card:hover { box-shadow: 0 12px 36px rgba(0,0,0,0.06); transform: translateY(-2px); }
+        .media-frame { border-radius: 12px; overflow: hidden; background: #f8fafc; border: 1px solid #e9edf2; display: flex; align-items: center; justify-content: center; max-height: 200px; }
+        .media-frame img, .media-frame video { width: 100%; height: auto; display: block; object-fit: cover; }
         .report-details { display: flex; flex-direction: column; justify-content: space-between; }
-        .report-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
-        .file-title { font-weight: 600; font-size: 16px; color: #fff; word-break: break-all; max-width: 70%; }
-        
-        .status-badge { padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; }
-        .status-safe { background: rgba(72, 187, 120, 0.15); color: #48bb78; border: 1px solid rgba(72, 187, 120, 0.3); }
-        .status-violation { background: rgba(245, 101, 101, 0.15); color: #f56565; border: 1px solid rgba(245, 101, 101, 0.3); }
-
-        .metrics-grid { display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
-        .metric-pill { background: rgba(15, 18, 25, 0.6); border: 1px solid rgba(255,255,255,0.04); padding: 6px 14px; border-radius: 6px; font-size: 13px; color: #cbd5e0; }
-        .metric-pill strong { color: #fff; font-weight: 600; margin-left: 4px; }
-
-        .violation-log { background: rgba(245, 101, 101, 0.06); border-left: 3px solid #f56565; padding: 10px 14px; border-radius: 0 6px 6px 0; margin-top: auto; }
-        .violation-title { font-size: 12px; color: #f56565; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
-        .violation-item { font-size: 13px; color: #e2e8f0; }
+        .report-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 12px; }
+        .file-title { font-weight: 600; font-size: 16px; color: #0f172a; word-break: break-all; max-width: 65%; display: flex; align-items: center; gap: 8px; }
+        .file-title i { color: #2563eb; }
+        .status-badge { padding: 4px 14px; border-radius: 20px; font-size: 11px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; white-space: nowrap; }
+        .status-safe { background: #dcfce7; color: #15803d; }
+        .status-violation { background: #fee2e2; color: #b91c1c; }
+        .metrics-grid { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
+        .metric-pill { background: #f8fafc; border: 1px solid #e9edf2; padding: 5px 14px; border-radius: 6px; font-size: 13px; color: #475569; }
+        .metric-pill strong { color: #0f172a; font-weight: 600; margin-left: 4px; }
+        .violation-log { background: #fef2f2; border-left: 3px solid #dc2626; padding: 10px 14px; border-radius: 0 6px 6px 0; margin-top: auto; }
+        .violation-title { font-size: 12px; color: #b91c1c; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
+        .violation-item { font-size: 13px; color: #1e293b; }
+        @media (max-width: 860px) { .record-card { grid-template-columns: 1fr; gap: 16px; } .stats-grid { grid-template-columns: 1fr 1fr; } .stats-grid .stat-card:last-child { grid-column: span 2; } .hero { flex-direction: column; align-items: stretch; } .hero .actions { justify-content: flex-start; } }
+        @media (max-width: 600px) { .navbar { flex-wrap: wrap; padding: 12px 20px; gap: 12px; } .nav-links { flex-wrap: wrap; gap: 16px; } .stats-grid { grid-template-columns: 1fr; } .stats-grid .stat-card:last-child { grid-column: span 1; } .ledger-header { flex-direction: column; align-items: stretch; } }
     </style>
 </head>
 <body>
 
-    <nav>
-        <h1 onclick="window.location.href='/'">VisionDesk AI</h1>
+    <!-- NAVIGATION -->
+    <nav class="navbar">
+        <div class="brand" onclick="window.location.href='/'">
+            <i class="fas fa-robot" style="color:#2563eb;"></i> Vision<span>Desk</span> AI
+        </div>
         <div class="nav-links">
-            <a href="/" class="nav-item active">Compliance Ledger</a>
-            <a href="/upload-feed" class="nav-item">Ingest Media Feed</a>
-            <div class="user-meta-tag">Logged in as: <strong style="color: #fff;">{{ user }}</strong> ({{ role }})</div>
-            <a href="/logout" class="btn-logout">Terminate Session</a>
+            <!-- CHANGED: "Compliance Ledger" -> "Dashboard" -->
+            <a href="/" class="active"><i class="fas fa-clipboard-list"></i> Dashboard</a>
+            <!-- CHANGED: "Ingest Media Feed" -> "Upload Media" (already done, but now confirmed) -->
+            <a href="/upload-feed"><i class="fas fa-upload"></i> Upload Media</a>
+            <span class="user-meta">
+                <i class="fas fa-user-circle"></i>
+                <strong style="color:#0f172a;">{{ user }}</strong>
+                <span style="color:#94a3b8;">({{ role }})</span>
+            </span>
+            <a href="/logout" class="btn-logout"><i class="fas fa-sign-out-alt"></i> Terminate</a>
         </div>
     </nav>
 
-    <div class="main-container">
-        <!-- Real-Time Audit Logs Output Stream -->
-        <div class="logs-column">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                <h3>Automated Site Auditing Ledger</h3>
-                <a href="/export/pdf" style="background: rgba(79, 209, 197, 0.1); border: 1px solid #4fd1c5; color: #4fd1c5; padding: 8px 16px; border-radius: 6px; font-size: 13px; font-weight: 600; text-decoration: none; transition: all 0.2s;" onmouseover="this.style.background='#4fd1c5'; this.style.color='#161b26';" onmouseout="this.style.background='rgba(79, 209, 197, 0.1)'; this.style.color='#4fd1c5';">
-                    📥 Export Executive PDF Report
-                </a>
+    <!-- MAIN -->
+    <div class="container">
+
+        <!-- Hero / Header -->
+        <div class="hero">
+            <div>
+                <h1>
+                    Automated Site Auditing <small>1.1</small>
+                </h1>
+                <p style="color:#64748b; margin-top:4px;">Refreshing &amp; unique compliance oversight</p>
             </div>
-            <p>Historical audit timeline of processed media arrays matched against occupational safety standards.</p>
-
-            {% for item in data %}
-            <div class="record-card">
-                <div class="media-frame">
-                    {% if item.file_name.lower().endswith(('.mp4', '.avi', '.mov')) %}
-                    <video controls muted>
-                        <source src="{{ item.processed_url }}" type="video/pipe">
-                    </video>
-                    {% else %}
-                    <img src="{{ item.processed_url }}" alt="Audit Asset Summary Visualization">
-                    {% endif %}
-                </div>
-                
-                <div class="report-details">
-                    <div>
-                        <div class="report-header">
-    <div class="file-title">{{ item.file_name }}</div>
-    
-    <!-- Added Quick Metrics Breakdown -->
-    <div class="header-metrics" style="display: inline-block; margin-right: 15px; font-size: 0.9rem; color: #a0aec0;">
-        👷‍♂️ {{ item.summary.workers }} | 
-        🪖 {{ item.summary.helmets }} | 
-        🦺 {{ item.summary.vests }} | 
-        😷 {{ item.summary.masks if item.summary.masks is defined else 0 }}
-    </div>
-
-    <span class="status-badge {% if item.status == 'SAFE' %}status-safe{% else %}status-violation{% endif %}">
-        {{ item.status }}
-    </span>
-</div>
-
-                        <div class="metrics-grid">
-                            <div class="metric-pill">Personnel Count:<strong>{{ item.summary.workers }}</strong></div>
-                            <div class="metric-pill">Hardhat Detections:<strong>{{ item.summary.helmets }}</strong></div>
-                            <div class="metric-pill">Safety Vest Detections:<strong>{{ item.summary.vests }}</strong></div>
-                        </div>
-                    </div>
-
-                    {% if item.violations %}
-                    <div class="violation-log">
-                        <div class="violation-title">Compliance Exceptions Discovered</div>
-                        {% for violation in item.violations %}
-                        <div class="violation-item">• {{ violation }}</div>
-                        {% endfor %}
-                    </div>
-                    {% endif %}
-                </div>
+            <div class="actions">
+                <a href="/export/pdf" class="btn-primary"><i class="fas fa-file-pdf"></i> Export PDF</a>
+                <!-- Upload Media button removed – only in nav now -->
             </div>
-            {% endfor %}
         </div>
+
+        <!-- Stats Cards -->
+        {% set total_audits = data|length %}
+        {% set total_violations = data|selectattr('status', 'ne', 'SAFE')|list|length %}
+        {% set compliance_rate = ((total_audits - total_violations) / total_audits * 100)|round(0) if total_audits > 0 else 100 %}
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-database"></i></div>
+                <div class="stat-info">
+                    <h4>Total Audits</h4>
+                    <div class="value">{{ total_audits }}</div>
+                </div>
+            </div>
+            <div class="stat-card violations">
+                <div class="stat-icon"><i class="fas fa-exclamation-triangle"></i></div>
+                <div class="stat-info">
+                    <h4>Safety Exceptions</h4>
+                    <div class="value">{{ total_violations }}</div>
+                </div>
+            </div>
+            <div class="stat-card compliance">
+                <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
+                <div class="stat-info">
+                    <h4>Compliance Index</h4>
+                    <div class="value">{{ compliance_rate }}%</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ledger Header -->
+        <div class="ledger-header">
+            <div>
+                <h2>Compliance Ledger</h2>
+                <div class="sub">Historical audit timeline of processed media arrays matched against safety standards.</div>
+            </div>
+        </div>
+
+        <!-- Record Cards -->
+        {% for item in data %}
+        <div class="record-card">
+            <div class="media-frame">
+                {% if item.file_name.lower().endswith(('.mp4', '.avi', '.mov')) %}
+                <video controls muted>
+                    <source src="{{ item.processed_url }}" type="video/mp4">
+                </video>
+                {% else %}
+                <img src="{{ item.processed_url }}" alt="Audit Asset Summary Visualization" />
+                {% endif %}
+            </div>
+
+            <div class="report-details">
+                <div>
+                    <div class="report-header">
+                        <span class="file-title"><i class="fas fa-file-alt"></i> {{ item.file_name }}</span>
+                        <span class="status-badge {% if item.status == 'SAFE' %}status-safe{% else %}status-violation{% endif %}">
+                            {{ item.status }}
+                        </span>
+                    </div>
+
+                    <div class="metrics-grid">
+                        <div class="metric-pill"><i class="fas fa-user"></i> Personnel: <strong>{{ item.summary.workers }}</strong></div>
+                        <div class="metric-pill"><i class="fas fa-hard-hat"></i> Hardhats: <strong>{{ item.summary.helmets }}</strong></div>
+                        <div class="metric-pill"><i class="fas fa-vest"></i> Vests: <strong>{{ item.summary.vests }}</strong></div>
+                        <div class="metric-pill"><i class="fas fa-mask"></i> Masks: <strong>{{ item.summary.get('masks', 0) }}</strong></div>
+                    </div>
+                </div>
+
+                {% if item.violations %}
+                <div class="violation-log">
+                    <div class="violation-title"><i class="fas fa-bell" style="margin-right:6px;"></i> Compliance Exceptions</div>
+                    {% for violation in item.violations %}
+                    <div class="violation-item">• {{ violation }}</div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% else %}
+        <div style="text-align:center;padding:60px 20px;color:#94a3b8;background:#fff;border-radius:16px;border:1px solid #e9edf2;">
+            <i class="fas fa-inbox" style="font-size:48px;margin-bottom:16px;display:block;opacity:0.3;"></i>
+            No audit records found. Upload a media feed to begin.
+        </div>
+        {% endfor %}
     </div>
+
 </body>
 </html>

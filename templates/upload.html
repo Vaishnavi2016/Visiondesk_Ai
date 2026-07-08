@@ -1,75 +1,128 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VisionDesk AI | Ingestion Control Node</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>VisionDesk AI · Upload Media</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
-        body { background-color: #0f1219; color: #e2e8f0; line-height: 1.5; }
-        
-        nav { background: rgba(22, 27, 38, 0.8); backdrop-filter: blur(10px); padding: 18px 40px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05); position: sticky; top: 0; z-index: 100; }
-        nav h1 { font-size: 22px; font-weight: 700; background: linear-gradient(to right, #63b3ed, #4fd1c5); -webkit-background-clip: text; -webkit-text-fill-color: transparent; cursor: pointer; }
-        .nav-links { display: flex; gap: 20px; align-items: center; }
-        .nav-item { color: #a0aec0; text-decoration: none; font-size: 14px; font-weight: 500; transition: color 0.2s; }
-        .nav-item:hover, .nav-item.active { color: #4fd1c5; }
-        .btn-logout { background: transparent; border: 1px solid rgba(229, 62, 62, 0.4); color: #fc8181; padding: 8px 16px; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; text-decoration: none; transition: all 0.2s; }
-        .btn-logout:hover { background: #e53e3e; color: #fff; }
-
-        .main-container { max-width: 800px; margin: 60px auto; padding: 0 24px; }
-        .ingest-card { background: #161b26; border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 40px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); text-align: center; }
-        .ingest-card h3 { font-size: 24px; font-weight: 600; margin-bottom: 12px; color: #fff; }
-        .ingest-card p { color: #a0aec0; font-size: 14px; margin-bottom: 32px; }
-        
-        .upload-zone { border: 2px dashed rgba(79, 209, 197, 0.3); border-radius: 12px; padding: 60px 40px; text-align: center; background: rgba(15, 18, 25, 0.6); cursor: pointer; transition: all 0.3s; }
-        .upload-zone:hover { border-color: #4fd1c5; background: rgba(22, 27, 38, 0.5); }
-        .upload-zone input { display: none; }
-        .upload-zone label { color: #fff; font-size: 18px; font-weight: 600; cursor: pointer; display: block; margin-bottom: 8px; }
-        .upload-zone span { display: block; font-size: 13px; color: #718096; }
-
-        .btn-submit-analysis { width: 100%; margin-top: 32px; padding: 16px; background: #3182ce; color: white; border: 0; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; transition: background 0.2s; }
-        .btn-submit-analysis:hover { background: #2b6cb0; }
+        /* Same styles as dashboard – keep consistent */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #f4f6fa; font-family: 'Inter', sans-serif; color: #1e293b; min-height: 100vh; padding-bottom: 40px; }
+        .navbar { background: #ffffff; box-shadow: 0 2px 12px rgba(0,0,0,0.04); padding: 16px 40px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 50; border-bottom: 1px solid #e9edf2; }
+        .brand { font-size: 24px; font-weight: 700; color: #0f172a; letter-spacing: -0.4px; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+        .brand span { color: #2563eb; }
+        .nav-links { display: flex; align-items: center; gap: 28px; }
+        .nav-links a { color: #475569; text-decoration: none; font-size: 14px; font-weight: 500; transition: color 0.2s; display: flex; align-items: center; gap: 6px; }
+        .nav-links a:hover { color: #2563eb; }
+        .nav-links a.active { color: #2563eb; font-weight: 600; }
+        .user-meta { color: #475569; font-size: 14px; display: flex; align-items: center; gap: 6px; }
+        .user-meta i { color: #2563eb; }
+        .btn-logout { background: transparent; border: 1px solid #e2e8f0; color: #475569; padding: 6px 16px; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; text-decoration: none; transition: all 0.2s; }
+        .btn-logout:hover { background: #fee2e2; border-color: #f87171; color: #b91c1c; }
+        .container { max-width: 800px; margin: 40px auto; padding: 0 24px; }
+        .upload-card { background: #ffffff; border-radius: 16px; padding: 40px; border: 1px solid #e9edf2; box-shadow: 0 4px 12px rgba(0,0,0,0.02); }
+        .upload-card h2 { font-size: 28px; font-weight: 700; color: #0f172a; margin-bottom: 8px; }
+        .upload-card .sub { color: #64748b; font-size: 16px; margin-bottom: 32px; }
+        .drop-zone { border: 2px dashed #d1d5db; border-radius: 12px; padding: 60px 20px; text-align: center; background: #fafbfc; transition: background 0.2s; cursor: pointer; }
+        .drop-zone:hover { background: #f1f5f9; border-color: #2563eb; }
+        .drop-zone i { font-size: 48px; color: #94a3b8; margin-bottom: 12px; }
+        .drop-zone p { color: #475569; font-size: 16px; }
+        .drop-zone .hint { color: #94a3b8; font-size: 14px; margin-top: 8px; }
+        .file-input { display: none; }
+        .btn-submit { background: #2563eb; color: #fff; border: none; padding: 14px 36px; border-radius: 10px; font-size: 16px; font-weight: 600; cursor: pointer; transition: background 0.2s; margin-top: 24px; width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .btn-submit:hover { background: #1d4ed8; }
+        .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+        @media (max-width: 600px) { .navbar { flex-wrap: wrap; padding: 12px 20px; gap: 12px; } .nav-links { flex-wrap: wrap; gap: 16px; } .upload-card { padding: 24px; } }
     </style>
 </head>
 <body>
 
-    <nav>
-        <h1 onclick="window.location.href='/'">VisionDesk AI</h1>
+    <!-- NAVIGATION (same as dashboard) -->
+    <nav class="navbar">
+        <div class="brand" onclick="window.location.href='/'">
+            <i class="fas fa-robot" style="color:#2563eb;"></i> Vision<span>Desk</span> AI
+        </div>
         <div class="nav-links">
-            <a href="/" class="nav-item">Compliance Ledger</a>
-            <a href="/upload-feed" class="nav-item active">Ingest Media Feed</a>
-            <a href="/logout" class="btn-logout">Terminate Session</a>
+            <a href="/"><i class="fas fa-clipboard-list"></i> Dashboard</a>
+            <a href="/upload-feed" class="active"><i class="fas fa-upload"></i> Upload Media</a>
+            <span class="user-meta">
+                <i class="fas fa-user-circle"></i>
+                <strong style="color:#0f172a;">{{ user }}</strong>
+                <span style="color:#94a3b8;">({{ role }})</span>
+            </span>
+            <a href="/logout" class="btn-logout"><i class="fas fa-sign-out-alt"></i> Terminate</a>
         </div>
     </nav>
 
-    <div class="main-container">
-        <div class="ingest-card">
-            <h3>Telemetry Media Ingestion Pipeline</h3>
-            <p>Deploy surveillance asset nodes into the custom computer vision engine for automated object verification.</p>
-            
-            <form action="/upload-feed" method="POST" enctype="multipart/form-data">
-                <div class="upload-zone" onclick="document.getElementById('fileInput').click()">
-                    <input type="file" name="file" id="fileInput" required onchange="updateFileName(this)">
-                    <label id="uploadLabel">📤 Select System Telemetry File</label>
-                    <span id="uploadSubtext">Drag & drop image or video assets directly here</span>
+    <!-- MAIN -->
+    <div class="container">
+        <div class="upload-card">
+            <h2><i class="fas fa-cloud-upload-alt" style="color:#2563eb; margin-right:10px;"></i> Telemetry Media Ingestion Pipeline</h2>
+            <p class="sub">Deploy surveillance asset nodes into the custom computer vision engine for automated object verification.</p>
+
+            <form method="POST" enctype="multipart/form-data" id="uploadForm">
+                <div class="drop-zone" id="dropZone">
+                    <i class="fas fa-file-image"></i>
+                    <p><strong>Select System Telemetry File</strong></p>
+                    <p class="hint">Drag &amp; drop image or video assets directly here</p>
+                    <input type="file" name="file" class="file-input" id="fileInput" accept=".jpg,.jpeg,.png,.mp4,.avi,.mov" required />
                 </div>
-                <button type="submit" class="btn-submit-analysis">Initiate Structural Audit Analysis</button>
+
+                <button type="submit" class="btn-submit" id="submitBtn">
+                    <i class="fas fa-play"></i> Initiate Structural Audit Analysis
+                </button>
             </form>
         </div>
     </div>
 
     <script>
-        function updateFileName(input) {
-            const label = document.getElementById('uploadLabel');
-            const subtext = document.getElementById('uploadSubtext');
-            if (input.files && input.files.length > 0) {
-                label.innerText = "Target Asset Staged Successfully";
-                label.style.color = "#4fd1c5";
-                subtext.innerText = "Selected File: " + input.files[0].name;
-                subtext.style.color = "#fff";
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const submitBtn = document.getElementById('submitBtn');
+
+        dropZone.addEventListener('click', () => fileInput.click());
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.style.borderColor = '#2563eb';
+            dropZone.style.background = '#eff6ff';
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.style.borderColor = '#d1d5db';
+            dropZone.style.background = '#fafbfc';
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.style.borderColor = '#d1d5db';
+            dropZone.style.background = '#fafbfc';
+            if (e.dataTransfer.files.length) {
+                fileInput.files = e.dataTransfer.files;
+                // Show selected file name
+                const file = e.dataTransfer.files[0];
+                dropZone.querySelector('p').innerHTML = `<strong>${file.name}</strong> (${(file.size/1024/1024).toFixed(2)} MB)`;
+                submitBtn.disabled = false;
             }
-        }
+        });
+
+        fileInput.addEventListener('change', function() {
+            if (this.files.length) {
+                const file = this.files[0];
+                dropZone.querySelector('p').innerHTML = `<strong>${file.name}</strong> (${(file.size/1024/1024).toFixed(2)} MB)`;
+                submitBtn.disabled = false;
+            }
+        });
+
+        // Disable submit if no file selected
+        document.getElementById('uploadForm').addEventListener('submit', function(e) {
+            if (!fileInput.files.length) {
+                e.preventDefault();
+                alert('Please select a file first.');
+            }
+        });
     </script>
 </body>
 </html>

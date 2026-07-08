@@ -1,57 +1,264 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VisionDesk | Systems Authentication</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>VisionDesk Core · Authentication</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
-        body { background: radial-gradient(circle at top right, #1a202c, #0f1219); color: #f7fafc; height: 100vh; display: flex; align-items: center; justify-content: center; overflow: hidden; }
-        .auth-container { width: 100%; max-width: 450px; padding: 40px; background: rgba(26, 32, 44, 0.65); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px; box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
-        .brand { text-align: center; margin-bottom: 32px; }
-        .brand h2 { font-size: 28px; font-weight: 700; letter-spacing: -0.5px; background: linear-gradient(to right, #3182ce, #63b3ed); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .brand p { color: #718096; font-size: 14px; margin-top: 6px; }
-        
-        /* High-tech Warning Banner */
-        .alert-banner { background: rgba(245, 101, 101, 0.12); border: 1px solid rgba(245, 101, 101, 0.4); color: #fc8181; padding: 12px; border-radius: 8px; font-size: 13px; text-align: center; margin-bottom: 24px; font-weight: 500; }
-        
-        .form-group { margin-bottom: 24px; }
-        .form-group label { display: block; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: #a0aec0; margin-bottom: 8px; font-weight: 600; }
-        .form-group input { width: 100%; padding: 14px; background: rgba(15, 18, 25, 0.8); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; color: #fff; font-size: 15px; transition: all 0.3s ease; }
-        .form-group input:focus { outline: none; border-color: #3182ce; box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.2); }
-        .btn-submit { width: 100%; padding: 14px; background: #3182ce; color: #fff; border: 0; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; transition: background 0.2s ease; margin-top: 10px; }
-        .btn-submit:hover { background: #2b6cb0; }
-        .auth-footer { text-align: center; margin-top: 24px; font-size: 14px; color: #a0aec0; }
-        .auth-footer a { color: #63b3ed; text-decoration: none; font-weight: 600; }
-        .auth-footer a:hover { text-decoration: underline; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: radial-gradient(circle at 30% 40%, #1a2332, #0b0f17);
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Subtle background pattern (optional) */
+        body::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image: 
+                linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+            background-size: 40px 40px;
+            pointer-events: none;
+        }
+
+        /* Glowing orb */
+        body::after {
+            content: '';
+            position: absolute;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(79, 209, 197, 0.08), transparent 70%);
+            top: -100px;
+            right: -100px;
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        .auth-container {
+            width: 100%;
+            max-width: 440px;
+            padding: 40px 36px;
+            background: rgba(22, 28, 40, 0.6);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+            position: relative;
+            z-index: 2;
+            transition: transform 0.3s ease;
+        }
+
+        .auth-container:hover {
+            transform: translateY(-2px);
+        }
+
+        .brand {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .brand .icon {
+            font-size: 42px;
+            color: #4fd1c5;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .brand h2 {
+            font-size: 30px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #63b3ed, #4fd1c5);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .brand p {
+            color: #94a3b8;
+            font-size: 14px;
+            margin-top: 6px;
+            font-weight: 400;
+            letter-spacing: 0.3px;
+        }
+
+        /* Error banner */
+        .alert-banner {
+            background: rgba(245, 101, 101, 0.12);
+            border: 1px solid rgba(245, 101, 101, 0.3);
+            color: #fc8181;
+            padding: 12px 16px;
+            border-radius: 10px;
+            font-size: 13px;
+            text-align: center;
+            margin-bottom: 24px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .form-group {
+            margin-bottom: 22px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            color: #a0aec0;
+            margin-bottom: 6px;
+            font-weight: 600;
+        }
+
+        .form-group .input-wrap {
+            position: relative;
+        }
+
+        .form-group .input-wrap i {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #64748b;
+            font-size: 16px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 14px 14px 14px 44px;
+            background: rgba(15, 18, 25, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            color: #f1f5f9;
+            font-size: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #4fd1c5;
+            box-shadow: 0 0 0 4px rgba(79, 209, 197, 0.15);
+            background: rgba(15, 18, 25, 0.9);
+        }
+
+        .form-group input::placeholder {
+            color: #64748b;
+            font-weight: 300;
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #3182ce, #2b6cb0);
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            margin-top: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            letter-spacing: 0.3px;
+        }
+
+        .btn-submit:hover {
+            background: linear-gradient(135deg, #2b6cb0, #1a4f8b);
+            box-shadow: 0 8px 24px rgba(49, 130, 206, 0.3);
+            transform: scale(1.01);
+        }
+
+        .btn-submit i {
+            font-size: 18px;
+        }
+
+        .auth-footer {
+            text-align: center;
+            margin-top: 28px;
+            font-size: 14px;
+            color: #94a3b8;
+        }
+
+        .auth-footer a {
+            color: #63b3ed;
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.2s;
+        }
+
+        .auth-footer a:hover {
+            color: #4fd1c5;
+            text-decoration: underline;
+        }
+
+        /* Responsive */
+        @media (max-width: 480px) {
+            .auth-container {
+                padding: 28px 20px;
+            }
+            .brand h2 {
+                font-size: 24px;
+            }
+        }
     </style>
 </head>
 <body>
     <div class="auth-container">
         <div class="brand">
+            <i class="fas fa-robot icon"></i>
             <h2>VisionDesk Core</h2>
             <p>Authorized Personnel Security Gateway</p>
         </div>
 
-        <!-- Render the error notification seamlessly on the page if authentication fails -->
         {% if error %}
         <div class="alert-banner">
-            ⚠️ {{ error }}
+            <i class="fas fa-exclamation-circle"></i> {{ error }}
         </div>
         {% endif %}
 
         <form method="POST">
             <div class="form-group">
-                <label>Security Operator Handle</label>
-                <input type="text" name="username" placeholder="Username" required autocomplete="off">
+                <label for="username">Security Operator Handle</label>
+                <div class="input-wrap">
+                    <i class="fas fa-user"></i>
+                    <input type="text" id="username" name="username" placeholder="Username" required autocomplete="off" />
+                </div>
             </div>
+
             <div class="form-group">
-                <label>Cryptographic Passkey</label>
-                <input type="password" name="password" placeholder="Password" required>
+                <label for="password">Cryptographic Passkey</label>
+                <div class="input-wrap">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" id="password" name="password" placeholder="Password" required />
+                </div>
             </div>
-            <button type="submit" class="btn-submit">Initialize Authentication</button>
+
+            <button type="submit" class="btn-submit">
+                <i class="fas fa-shield-alt"></i> Initialize Authentication
+            </button>
         </form>
+
         <div class="auth-footer">
             New operator node? <a href="/register">Register Access Profile</a>
         </div>
