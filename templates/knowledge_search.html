@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Knowledge Search - VisionDesk</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f5f7fa; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .search-box { margin: 20px 0; padding: 20px; background: #f7fafc; border-radius: 8px; }
+        .result-item { border: 1px solid #e2e8f0; padding: 15px; margin: 10px 0; border-radius: 4px; }
+        .keyword-tag { display: inline-block; background: #e2e8f0; padding: 2px 8px; margin: 2px; border-radius: 3px; font-size: 12px; }
+        .btn { background: #2b6cb0; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; }
+        .btn:hover { background: #1a365d; }
+        .nav a { margin-right: 15px; color: #2b6cb0; text-decoration: none; }
+        .snippet { background: #f7fafc; padding: 10px; border-radius: 4px; margin: 5px 0; font-style: italic; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔍 Knowledge Repository Search</h1>
+            <div>
+                <span>Welcome, {{ user }} ({{ role }})</span>
+                <a href="{{ url_for('index') }}" class="btn" style="margin-left: 10px;">Dashboard</a>
+                <a href="{{ url_for('logout') }}" class="btn" style="background: #e53e3e;">Logout</a>
+            </div>
+        </div>
+        
+        <div class="nav">
+            <a href="{{ url_for('index') }}">Home</a>
+            <a href="{{ url_for('upload_feed') }}">Upload Media</a>
+            <a href="{{ url_for('upload_document') }}">📄 Documents</a>
+            <a href="{{ url_for('search_knowledge') }}">🔍 Search Knowledge</a>
+            <a href="{{ url_for('export_knowledge_pdf') }}">📊 Export Knowledge Report</a>
+        </div>
+        
+        <div class="search-box">
+            <h3>Search Documents</h3>
+            <form method="POST">
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <input type="text" name="query" placeholder="Enter search term..." 
+                           style="flex: 1; padding: 10px; border: 1px solid #cbd5e0; border-radius: 4px;" 
+                           value="{{ query or '' }}">
+                    <select name="search_type" style="padding: 10px; border: 1px solid #cbd5e0; border-radius: 4px;">
+                        <option value="full_text">Full Text</option>
+                        <option value="keyword">Safety Keywords</option>
+                    </select>
+                    <button type="submit" class="btn">Search</button>
+                </div>
+            </form>
+        </div>
+        
+        {% if results is defined %}
+            <h3>Search Results ({{ result_count }} found)</h3>
+            {% if results %}
+                {% for result in results %}
+                <div class="result-item">
+                    <h4>{{ result.filename }}</h4>
+                    {% if result.snippet %}
+                        <div class="snippet">{{ result.snippet }}</div>
+                    {% endif %}
+                    {% if result.safety_keywords %}
+                        <div>
+                            <strong>Safety Keywords:</strong><br>
+                            {% for category, keywords in result.safety_keywords.items() %}
+                                <div>
+                                    <strong>{{ category|title }}:</strong>
+                                    {% for kw in keywords %}
+                                    <span class="keyword-tag">{{ kw }}</span>
+                                    {% endfor %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    {% if result.metadata %}
+                        <div style="margin-top: 5px; color: #718096; font-size: 12px;">
+                            <strong>Metadata:</strong> 
+                            {% if result.metadata.dates %}
+                                Dates: {{ result.metadata.dates|join(', ') }}
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            {% else %}
+                <p>No results found for "{{ query }}"</p>
+            {% endif %}
+        {% endif %}
+    </div>
+</body>
+</html>

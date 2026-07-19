@@ -1,189 +1,824 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>VisionDesk AI · Dashboard</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VisionDesk AI Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <style>
-        /* All styles remain identical – no changes needed */
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: #f4f6fa; font-family: 'Inter', sans-serif; color: #1e293b; min-height: 100vh; padding-bottom: 40px; }
-        .navbar { background: #ffffff; box-shadow: 0 2px 12px rgba(0,0,0,0.04); padding: 16px 40px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 50; border-bottom: 1px solid #e9edf2; }
-        .brand { font-size: 24px; font-weight: 700; color: #0f172a; letter-spacing: -0.4px; cursor: pointer; display: flex; align-items: center; gap: 8px; }
-        .brand span { color: #2563eb; }
-        .nav-links { display: flex; align-items: center; gap: 28px; }
-        .nav-links a { color: #475569; text-decoration: none; font-size: 14px; font-weight: 500; transition: color 0.2s; display: flex; align-items: center; gap: 6px; }
-        .nav-links a:hover, .nav-links a.active { color: #2563eb; }
-        .nav-links a.active { font-weight: 600; }
-        .user-meta { color: #475569; font-size: 14px; display: flex; align-items: center; gap: 6px; }
-        .user-meta i { color: #2563eb; }
-        .btn-logout { background: transparent; border: 1px solid #e2e8f0; color: #475569; padding: 6px 16px; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; text-decoration: none; transition: all 0.2s; }
-        .btn-logout:hover { background: #fee2e2; border-color: #f87171; color: #b91c1c; }
-        .container { max-width: 1280px; margin: 32px auto 0; padding: 0 24px; }
-        .hero { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; flex-wrap: wrap; gap: 16px; }
-        .hero h1 { font-size: 28px; font-weight: 700; color: #0f172a; letter-spacing: -0.5px; }
-        .hero h1 small { font-size: 16px; font-weight: 400; color: #64748b; margin-left: 12px; }
-        .hero .actions { display: flex; gap: 12px; }
-        .btn-primary { background: #2563eb; color: #fff; border: none; padding: 10px 24px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; text-decoration: none; transition: background 0.2s, box-shadow 0.2s; display: inline-flex; align-items: center; gap: 8px; }
-        .btn-primary:hover { background: #1d4ed8; box-shadow: 0 4px 14px rgba(37,99,235,0.3); }
-        .btn-secondary { background: #f1f5f9; color: #1e293b; border: 1px solid #e2e8f0; padding: 10px 24px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; text-decoration: none; transition: background 0.2s; display: inline-flex; align-items: center; gap: 8px; }
-        .btn-secondary:hover { background: #e2e8f0; }
-        .stats-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 24px; margin-bottom: 40px; }
-        .stat-card { background: #ffffff; border-radius: 16px; padding: 24px 28px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); border: 1px solid #e9edf2; transition: transform 0.2s, box-shadow 0.2s; display: flex; align-items: center; gap: 16px; }
-        .stat-card:hover { transform: translateY(-4px); box-shadow: 0 12px 30px rgba(0,0,0,0.06); }
-        .stat-icon { width: 52px; height: 52px; background: #eff6ff; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; color: #2563eb; flex-shrink: 0; }
-        .stat-card.violations .stat-icon { background: #fef2f2; color: #dc2626; }
-        .stat-card.compliance .stat-icon { background: #f0fdf4; color: #16a34a; }
-        .stat-info h4 { font-size: 14px; font-weight: 500; color: #64748b; margin-bottom: 4px; }
-        .stat-info .value { font-size: 28px; font-weight: 700; color: #0f172a; }
-        .ledger-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
-        .ledger-header h2 { font-size: 22px; font-weight: 600; color: #0f172a; }
-        .ledger-header .sub { color: #64748b; font-size: 14px; font-weight: 400; margin-top: 2px; }
-        .record-card { background: #ffffff; border-radius: 16px; padding: 24px; margin-bottom: 28px; box-shadow: 0 4px 12px rgba(0,0,0,0.02); border: 1px solid #e9edf2; display: grid; grid-template-columns: 280px 1fr; gap: 28px; transition: box-shadow 0.25s, transform 0.2s; }
-        .record-card:hover { box-shadow: 0 12px 36px rgba(0,0,0,0.06); transform: translateY(-2px); }
-        .media-frame { border-radius: 12px; overflow: hidden; background: #f8fafc; border: 1px solid #e9edf2; display: flex; align-items: center; justify-content: center; max-height: 200px; }
-        .media-frame img, .media-frame video { width: 100%; height: auto; display: block; object-fit: cover; }
-        .report-details { display: flex; flex-direction: column; justify-content: space-between; }
-        .report-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 12px; }
-        .file-title { font-weight: 600; font-size: 16px; color: #0f172a; word-break: break-all; max-width: 65%; display: flex; align-items: center; gap: 8px; }
-        .file-title i { color: #2563eb; }
-        .status-badge { padding: 4px 14px; border-radius: 20px; font-size: 11px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; white-space: nowrap; }
-        .status-safe { background: #dcfce7; color: #15803d; }
-        .status-violation { background: #fee2e2; color: #b91c1c; }
-        .metrics-grid { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
-        .metric-pill { background: #f8fafc; border: 1px solid #e9edf2; padding: 5px 14px; border-radius: 6px; font-size: 13px; color: #475569; }
-        .metric-pill strong { color: #0f172a; font-weight: 600; margin-left: 4px; }
-        .violation-log { background: #fef2f2; border-left: 3px solid #dc2626; padding: 10px 14px; border-radius: 0 6px 6px 0; margin-top: auto; }
-        .violation-title { font-size: 12px; color: #b91c1c; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
-        .violation-item { font-size: 13px; color: #1e293b; }
-        @media (max-width: 860px) { .record-card { grid-template-columns: 1fr; gap: 16px; } .stats-grid { grid-template-columns: 1fr 1fr; } .stats-grid .stat-card:last-child { grid-column: span 2; } .hero { flex-direction: column; align-items: stretch; } .hero .actions { justify-content: flex-start; } }
-        @media (max-width: 600px) { .navbar { flex-wrap: wrap; padding: 12px 20px; gap: 12px; } .nav-links { flex-wrap: wrap; gap: 16px; } .stats-grid { grid-template-columns: 1fr; } .stats-grid .stat-card:last-child { grid-column: span 1; } .ledger-header { flex-direction: column; align-items: stretch; } }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Poppins, sans-serif;
+        }
+
+        body {
+            background: #08111f;
+            color: white;
+            overflow-x: hidden;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            height: 100vh;
+            width: 270px;
+            background: #0f172a;
+            padding: 30px 20px;
+            border-right: 1px solid rgba(255, 255, 255, .05);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 45px;
+        }
+
+        .logo i {
+            font-size: 38px;
+            color: #38bdf8;
+        }
+
+        .logo span {
+            color: #38bdf8;
+        }
+
+        .menu {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .menu a {
+            text-decoration: none;
+            color: #d1d5db;
+            padding: 14px 18px;
+            border-radius: 12px;
+            transition: .3s;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 16px;
+        }
+
+        .menu a:hover {
+            background: #2563eb;
+            color: white;
+            transform: translateX(6px);
+        }
+
+        .menu a.active {
+            background: linear-gradient(90deg, #2563eb, #06b6d4);
+            color: white;
+        }
+
+        .logout {
+            margin-top: auto;
+        }
+
+        /* Main */
+        .main {
+            margin-left: 270px;
+            padding: 35px;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 35px;
+        }
+
+        .search {
+            position: relative;
+            width: 380px;
+        }
+
+        .search input {
+            width: 100%;
+            height: 48px;
+            padding-left: 45px;
+            background: #111c30;
+            border: none;
+            border-radius: 14px;
+            color: white;
+        }
+
+        .search i {
+            position: absolute;
+            left: 15px;
+            top: 16px;
+            color: #94a3b8;
+        }
+
+        .user {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+        }
+
+        .notification {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: #111c30;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .profile {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .avatar {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, #2563eb, #06b6d4);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        /* Cards */
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 25px;
+            margin-top: 30px;
+        }
+
+        .card-box {
+            background: #111c30;
+            padding: 25px;
+            border-radius: 18px;
+            transition: .4s;
+            border: 1px solid rgba(255, 255, 255, .05);
+        }
+
+        .card-box:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, .4);
+        }
+
+        .card-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .icon {
+            width: 58px;
+            height: 58px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            background: linear-gradient(135deg, #2563eb, #06b6d4);
+        }
+
+        .number {
+            font-size: 38px;
+            font-weight: 700;
+        }
+
+        .label {
+            color: #94a3b8;
+            font-size: 15px;
+        }
+
+        /* Chart */
+        .chart-card {
+            margin-top: 35px;
+            background: #111c30;
+            padding: 25px;
+            border-radius: 18px;
+        }
+
+        .chart-title {
+            font-size: 22px;
+            font-weight: 600;
+            margin-bottom: 25px;
+        }
+
+        canvas {
+            max-height: 380px;
+        }
+
+        .record-card {
+            background: #18253d;
+            padding: 18px;
+            border-radius: 16px;
+            margin-bottom: 18px;
+            transition: .35s;
+            border: 1px solid rgba(255, 255, 255, .05);
+        }
+
+        .record-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, .35);
+        }
+
+        .preview {
+            width: 100%;
+            height: 120px;
+            border-radius: 12px;
+            object-fit: cover;
+        }
+
+        .pill {
+            display: inline-block;
+            margin: 5px;
+            padding: 7px 14px;
+            background: #22324d;
+            border-radius: 25px;
+            font-size: 13px;
+        }
+
+        .status {
+            padding: 8px 20px;
+            border-radius: 30px;
+            font-weight: 600;
+        }
+
+        .safe {
+            background: #16a34a;
+            color: white;
+        }
+
+        .danger {
+            background: #dc2626;
+            color: white;
+        }
+
+        .violation-box {
+            margin-top: 15px;
+            padding: 12px;
+            background: #351515;
+            border-left: 4px solid red;
+            border-radius: 10px;
+        }
+
+        .circle {
+            width: 220px;
+            height: 220px;
+            margin: auto;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: conic-gradient(#06b6d4 {{ compliance }}%, #1e293b 0);
+        }
+
+        .circle::before {
+            content: "";
+            position: absolute;
+            width: 170px;
+            height: 170px;
+            background: #111c30;
+            border-radius: 50%;
+        }
+
+        .percent {
+            position: absolute;
+            font-size: 34px;
+            font-weight: bold;
+            z-index: 5;
+        }
+
+        .action-btn {
+            display: block;
+            text-decoration: none;
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 12px;
+            background: #2563eb;
+            color: white;
+            font-weight: 600;
+            transition: .3s;
+            text-align: center;
+        }
+
+        .action-btn:hover {
+            background: #0ea5e9;
+            transform: translateX(8px);
+            color: white;
+        }
+
+        .action-btn.purple {
+            background: #7c3aed;
+        }
+
+        .action-btn.purple:hover {
+            background: #6d28d9;
+        }
+
+        .action-btn.green {
+            background: #059669;
+        }
+
+        .action-btn.green:hover {
+            background: #047857;
+        }
+
+        .action-btn.orange {
+            background: #d97706;
+        }
+
+        .action-btn.orange:hover {
+            background: #b45309;
+        }
+
+        .action-btn.red {
+            background: #dc2626;
+        }
+
+        .action-btn.red:hover {
+            background: #b91c1c;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #08111f;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #2563eb;
+            border-radius: 10px;
+        }
+
+        /* Fade Animation */
+        .record-card {
+            animation: fadeUp .6s ease;
+        }
+
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(25px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Responsive */
+        @media(max-width:1200px) {
+            .cards {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        @media(max-width:900px) {
+            .sidebar {
+                width: 80px;
+            }
+            .sidebar .logo {
+                font-size: 0;
+                justify-content: center;
+            }
+            .sidebar .logo span {
+                display: none;
+            }
+            .sidebar .menu a {
+                justify-content: center;
+                font-size: 0;
+            }
+            .sidebar .menu a i {
+                font-size: 22px;
+                margin: 0;
+            }
+            .main {
+                margin-left: 80px;
+            }
+            .search {
+                display: none;
+            }
+            .cards {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media(max-width:768px) {
+            .cards {
+                grid-template-columns: 1fr;
+            }
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 20px;
+            }
+            .circle {
+                width: 180px;
+                height: 180px;
+            }
+            .circle::before {
+                width: 135px;
+                height: 135px;
+            }
+            .preview {
+                height: 180px;
+            }
+        }
+
+        .footer {
+            margin-top: 40px;
+            padding: 20px;
+            text-align: center;
+            color: #94a3b8;
+            font-size: 14px;
+            border-top: 1px solid rgba(255, 255, 255, .08);
+        }
+        .footer span {
+            color: #38bdf8;
+            font-weight: 600;
+        }
     </style>
 </head>
+
 <body>
 
-    <!-- NAVIGATION -->
-    <nav class="navbar">
-        <div class="brand" onclick="window.location.href='/'">
-            <i class="fas fa-robot" style="color:#2563eb;"></i> Vision<span>Desk</span> AI
+    <div class="sidebar">
+        <div class="logo">
+            <i class="fa-solid fa-robot"></i>
+            Vision<span>Desk</span>
         </div>
-        <div class="nav-links">
-            <!-- CHANGED: "Compliance Ledger" -> "Dashboard" -->
-            <a href="/" class="active"><i class="fas fa-clipboard-list"></i> Dashboard</a>
-            <!-- CHANGED: "Ingest Media Feed" -> "Upload Media" (already done, but now confirmed) -->
-            <a href="/upload-feed"><i class="fas fa-upload"></i> Upload Media</a>
-            <span class="user-meta">
-                <i class="fas fa-user-circle"></i>
-                <strong style="color:#0f172a;">{{ user }}</strong>
-                <span style="color:#94a3b8;">({{ role }})</span>
-            </span>
-            <a href="/logout" class="btn-logout"><i class="fas fa-sign-out-alt"></i> Terminate</a>
+        <div class="menu">
+            <a href="/" class="active">
+                <i class="fa-solid fa-chart-line"></i>
+                Dashboard
+            </a>
+            <a href="/upload-feed">
+                <i class="fa-solid fa-cloud-arrow-up"></i>
+                Upload Media
+            </a>
+            <a href="/upload-document">
+                <i class="fa-solid fa-file-pdf"></i>
+                📄 Documents
+            </a>
+            <a href="/search-knowledge">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                🔍 Search Knowledge
+            </a>
+            <a href="/export/pdf">
+                <i class="fa-solid fa-file-pdf"></i>
+                Reports
+            </a>
+            <a href="#">
+                <i class="fa-solid fa-clock-rotate-left"></i>
+                History
+            </a>
+            <a href="#">
+                <i class="fa-solid fa-gear"></i>
+                Settings
+            </a>
         </div>
-    </nav>
-
-    <!-- MAIN -->
-    <div class="container">
-
-        <!-- Hero / Header -->
-        <div class="hero">
-            <div>
-                <h1>
-                    Automated Site Auditing <small>1.1</small>
-                </h1>
-                <p style="color:#64748b; margin-top:4px;">Refreshing &amp; unique compliance oversight</p>
-            </div>
-            <div class="actions">
-                <a href="/export/pdf" class="btn-primary"><i class="fas fa-file-pdf"></i> Export PDF</a>
-                <!-- Upload Media button removed – only in nav now -->
-            </div>
+        <div class="logout">
+            <a href="/logout" class="menu">
+                <i class="fa-solid fa-right-from-bracket"></i>
+                Logout
+            </a>
         </div>
-
-        <!-- Stats Cards -->
-        {% set total_audits = data|length %}
-        {% set total_violations = data|selectattr('status', 'ne', 'SAFE')|list|length %}
-        {% set compliance_rate = ((total_audits - total_violations) / total_audits * 100)|round(0) if total_audits > 0 else 100 %}
-
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-icon"><i class="fas fa-database"></i></div>
-                <div class="stat-info">
-                    <h4>Total Audits</h4>
-                    <div class="value">{{ total_audits }}</div>
-                </div>
-            </div>
-            <div class="stat-card violations">
-                <div class="stat-icon"><i class="fas fa-exclamation-triangle"></i></div>
-                <div class="stat-info">
-                    <h4>Safety Exceptions</h4>
-                    <div class="value">{{ total_violations }}</div>
-                </div>
-            </div>
-            <div class="stat-card compliance">
-                <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
-                <div class="stat-info">
-                    <h4>Compliance Index</h4>
-                    <div class="value">{{ compliance_rate }}%</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Ledger Header -->
-        <div class="ledger-header">
-            <div>
-                <h2>Compliance Ledger</h2>
-                <div class="sub">Historical audit timeline of processed media arrays matched against safety standards.</div>
-            </div>
-        </div>
-
-        <!-- Record Cards -->
-        {% for item in data %}
-        <div class="record-card">
-            <div class="media-frame">
-                {% if item.file_name.lower().endswith(('.mp4', '.avi', '.mov')) %}
-                <video controls muted>
-                    <source src="{{ item.processed_url }}" type="video/mp4">
-                </video>
-                {% else %}
-                <img src="{{ item.processed_url }}" alt="Audit Asset Summary Visualization" />
-                {% endif %}
-            </div>
-
-            <div class="report-details">
-                <div>
-                    <div class="report-header">
-                        <span class="file-title"><i class="fas fa-file-alt"></i> {{ item.file_name }}</span>
-                        <span class="status-badge {% if item.status == 'SAFE' %}status-safe{% else %}status-violation{% endif %}">
-                            {{ item.status }}
-                        </span>
-                    </div>
-
-                    <div class="metrics-grid">
-                        <div class="metric-pill"><i class="fas fa-user"></i> Personnel: <strong>{{ item.summary.workers }}</strong></div>
-                        <div class="metric-pill"><i class="fas fa-hard-hat"></i> Hardhats: <strong>{{ item.summary.helmets }}</strong></div>
-                        <div class="metric-pill"><i class="fas fa-vest"></i> Vests: <strong>{{ item.summary.vests }}</strong></div>
-                        <div class="metric-pill"><i class="fas fa-mask"></i> Masks: <strong>{{ item.summary.get('masks', 0) }}</strong></div>
-                    </div>
-                </div>
-
-                {% if item.violations %}
-                <div class="violation-log">
-                    <div class="violation-title"><i class="fas fa-bell" style="margin-right:6px;"></i> Compliance Exceptions</div>
-                    {% for violation in item.violations %}
-                    <div class="violation-item">• {{ violation }}</div>
-                    {% endfor %}
-                </div>
-                {% endif %}
-            </div>
-        </div>
-        {% else %}
-        <div style="text-align:center;padding:60px 20px;color:#94a3b8;background:#fff;border-radius:16px;border:1px solid #e9edf2;">
-            <i class="fas fa-inbox" style="font-size:48px;margin-bottom:16px;display:block;opacity:0.3;"></i>
-            No audit records found. Upload a media feed to begin.
-        </div>
-        {% endfor %}
     </div>
 
+    <div class="main">
+        <div class="header">
+            <div>
+                <h2>Welcome Back, {{ user }}</h2>
+                <p style="color:#94a3b8">AI Powered PPE Detection Dashboard</p>
+            </div>
+            <div class="user">
+                <div class="search">
+                    <i class="fa-solid fa-search"></i>
+                    <input type="text" placeholder="Search...">
+                </div>
+                <div class="notification">
+                    <i class="fa-solid fa-bell"></i>
+                </div>
+                <div class="profile">
+                    <div class="avatar">{{ user[0]|upper }}</div>
+                    <div>
+                        <b>{{ user }}</b>
+                        <br>
+                        <small style="color:#94a3b8">{{ role }}</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% set total=data|length %}
+        {% set violations=data|selectattr('status','ne','SAFE')|list|length %}
+        {% set safe=total-violations %}
+        {% set compliance=((safe/total)*100)|round(0) if total>0 else 100 %}
+
+        <div class="cards">
+            <div class="card-box">
+                <div class="card-top">
+                    <div>
+                        <div class="label">Total Audits</div>
+                        <div class="number">{{ total }}</div>
+                    </div>
+                    <div class="icon">
+                        <i class="fa-solid fa-folder-open"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-box">
+                <div class="card-top">
+                    <div>
+                        <div class="label">Violations</div>
+                        <div class="number">{{ violations }}</div>
+                    </div>
+                    <div class="icon">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-box">
+                <div class="card-top">
+                    <div>
+                        <div class="label">Safe</div>
+                        <div class="number">{{ safe }}</div>
+                    </div>
+                    <div class="icon">
+                        <i class="fa-solid fa-circle-check"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-box">
+                <div class="card-top">
+                    <div>
+                        <div class="label">Compliance</div>
+                        <div class="number">{{ compliance }}%</div>
+                    </div>
+                    <div class="icon">
+                        <i class="fa-solid fa-shield-halved"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Document Stats Card -->
+            <div class="card-box" style="background: #1e1b4b;">
+                <div class="card-top">
+                    <div>
+                        <div class="label">📄 Documents</div>
+                        <div class="number" id="docCount">0</div>
+                    </div>
+                    <div class="icon" style="background: linear-gradient(135deg, #7c3aed, #a78bfa);">
+                        <i class="fa-solid fa-file-pdf"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="chart-card">
+            <div class="chart-title">Safety Analytics</div>
+            <canvas id="chart"></canvas>
+        </div>
+
+        <!-- Recent Detection Records -->
+        <div class="row mt-4">
+            <div class="col-lg-8">
+                <div class="chart-card">
+                    <div class="chart-title">
+                        <i class="fa-solid fa-clock-rotate-left"></i>
+                        Recent Detection History
+                    </div>
+                    {% for item in data %}
+                    <div class="record-card">
+                        <div class="row align-items-center">
+                            <div class="col-md-3">
+                                {% if item.file_name.lower().endswith(('.mp4','.avi','.mov')) %}
+                                <video controls class="preview">
+                                    <source src="{{ item.processed_url }}" type="video/mp4">
+                                </video>
+                                {% else %}
+                                <img src="{{ item.processed_url }}" class="preview">
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <h5>{{ item.file_name }}</h5>
+                                <div class="mt-2">
+                                    <span class="pill">
+                                        <i class="fa-solid fa-user"></i>
+                                        Workers <b>{{ item.summary.workers }}</b>
+                                    </span>
+                                    <span class="pill">
+                                        <i class="fa-solid fa-hard-hat"></i>
+                                        Helmets <b>{{ item.summary.helmets }}</b>
+                                    </span>
+                                    <span class="pill">
+                                        <i class="fa-solid fa-shirt"></i>
+                                        Vests <b>{{ item.summary.vests }}</b>
+                                    </span>
+                                    <span class="pill">
+                                        <i class="fa-solid fa-mask-face"></i>
+                                        Masks <b>{{ item.summary.get('masks',0) }}</b>
+                                    </span>
+                                </div>
+                                {% if item.violations %}
+                                <div class="violation-box">
+                                    {% for v in item.violations %}
+                                    <div>
+                                        <i class="fa-solid fa-circle-xmark text-danger"></i>
+                                        {{ v }}
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-3 text-end">
+                                {% if item.status=="SAFE" %}
+                                <span class="status safe">SAFE</span>
+                                {% else %}
+                                <span class="status danger">VIOLATION</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Right Panel -->
+            <div class="col-lg-4">
+                <div class="chart-card">
+                    <div class="chart-title">Compliance Meter</div>
+                    <div class="circle">
+                        <div class="percent">{{ compliance }}%</div>
+                    </div>
+                    <p class="text-center mt-3 text-secondary">Overall Site Compliance</p>
+                </div>
+
+                <div class="chart-card mt-4">
+                    <div class="chart-title">Quick Actions</div>
+                    <a href="/upload-feed" class="action-btn">
+                        <i class="fa-solid fa-cloud-arrow-up"></i>
+                        Upload New Media
+                    </a>
+                    <a href="/upload-document" class="action-btn purple">
+                        <i class="fa-solid fa-file-pdf"></i>
+                        Upload Document
+                    </a>
+                    <a href="/export/pdf" class="action-btn red">
+                        <i class="fa-solid fa-file-pdf"></i>
+                        Export Compliance Report
+                    </a>
+                    <a href="/export-knowledge-pdf" class="action-btn green">
+                        <i class="fa-solid fa-book"></i>
+                        Export Knowledge Report
+                    </a>
+                    <a href="/knowledge-stats" class="action-btn orange">
+                        <i class="fa-solid fa-chart-pie"></i>
+                        Knowledge Stats
+                    </a>
+                    <a href="/" class="action-btn">
+                        <i class="fa-solid fa-rotate"></i>
+                        Refresh Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            VisionDesk AI • Smart PPE Detection System • Developed using Flask, YOLOv8 & MongoDB
+            <br><br>
+            <span>© 2026 VisionDesk AI. All Rights Reserved.</span>
+        </div>
+    </div>
+
+    <!-- Dashboard Charts -->
+    <script>
+        const ctx = document.getElementById("chart");
+        new Chart(ctx, {
+            type: "bar",
+            data: {
+                labels: ["Total", "Safe", "Violations"],
+                datasets: [{
+                    label: "Detection Summary",
+                    data: [
+                        {{ total }},
+                        {{ safe }},
+                        {{ violations }}
+                    ],
+                    backgroundColor: [
+                        "#3b82f6",
+                        "#22c55e",
+                        "#ef4444"
+                    ],
+                    borderRadius: 10,
+                    borderSkipped: false
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            color: "#ffffff"
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: "rgba(255,255,255,.08)"
+                        },
+                        ticks: {
+                            color: "#ffffff"
+                        }
+                    }
+                }
+            }
+        });
+
+        // Animated Counter
+        document.querySelectorAll(".number").forEach(counter => {
+            const target = parseInt(counter.innerText);
+            let count = 0;
+            const speed = Math.max(1, Math.ceil(target / 40));
+            const update = () => {
+                if (count < target) {
+                    count += speed;
+                    if (count > target) count = target;
+                    counter.innerText = count;
+                    requestAnimationFrame(update);
+                }
+            };
+            update();
+        });
+
+        // Search Detection Cards
+        const searchInput = document.querySelector(".search input");
+        const cards = document.querySelectorAll(".record-card");
+        if (searchInput) {
+            searchInput.addEventListener("keyup", function() {
+                const value = this.value.toLowerCase();
+                cards.forEach(card => {
+                    const txt = card.innerText.toLowerCase();
+                    card.style.display = txt.includes(value) ? "block" : "none";
+                });
+            });
+        }
+
+        // Notification
+        const notify = document.querySelector(".notification");
+        if (notify) {
+            notify.addEventListener("click", () => {
+                alert("VisionDesk AI\n\nNo new notifications.");
+            });
+        }
+
+        // Fetch document statistics
+        fetch('/knowledge-stats')
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('docCount').textContent = data.total_documents || 0;
+            })
+            .catch(err => {
+                console.log('Could not fetch document stats:', err);
+                document.getElementById('docCount').textContent = '0';
+            });
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
+
 </html>

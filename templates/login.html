@@ -1,267 +1,462 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>VisionDesk Core · Authentication</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-        body {
-            background: radial-gradient(circle at 30% 40%, #1a2332, #0b0f17);
-            font-family: 'Inter', sans-serif;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-            position: relative;
-            overflow: hidden;
-        }
+<title>VisionDesk AI | Login</title>
 
-        /* Subtle background pattern (optional) */
-        body::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background-image: 
-                linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
-            background-size: 40px 40px;
-            pointer-events: none;
-        }
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
-        /* Glowing orb */
-        body::after {
-            content: '';
-            position: absolute;
-            width: 400px;
-            height: 400px;
-            background: radial-gradient(circle, rgba(79, 209, 197, 0.08), transparent 70%);
-            top: -100px;
-            right: -100px;
-            border-radius: 50%;
-            pointer-events: none;
-        }
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 
-        .auth-container {
-            width: 100%;
-            max-width: 440px;
-            padding: 40px 36px;
-            background: rgba(22, 28, 40, 0.6);
-            backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
-            position: relative;
-            z-index: 2;
-            transition: transform 0.3s ease;
-        }
+<link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 
-        .auth-container:hover {
-            transform: translateY(-2px);
-        }
+<style>
 
-        .brand {
-            text-align: center;
-            margin-bottom: 32px;
-        }
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:'Poppins',sans-serif;
+}
 
-        .brand .icon {
-            font-size: 42px;
-            color: #4fd1c5;
-            margin-bottom: 8px;
-            display: block;
-        }
+body{
 
-        .brand h2 {
-            font-size: 30px;
-            font-weight: 700;
-            letter-spacing: -0.5px;
-            background: linear-gradient(135deg, #63b3ed, #4fd1c5);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
+height:100vh;
 
-        .brand p {
-            color: #94a3b8;
-            font-size: 14px;
-            margin-top: 6px;
-            font-weight: 400;
-            letter-spacing: 0.3px;
-        }
+background:
+linear-gradient(rgba(7,15,35,.75),rgba(7,15,35,.85)),
+url('https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1600&q=80');
 
-        /* Error banner */
-        .alert-banner {
-            background: rgba(245, 101, 101, 0.12);
-            border: 1px solid rgba(245, 101, 101, 0.3);
-            color: #fc8181;
-            padding: 12px 16px;
-            border-radius: 10px;
-            font-size: 13px;
-            text-align: center;
-            margin-bottom: 24px;
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
+background-size:cover;
+background-position:center;
 
-        .form-group {
-            margin-bottom: 22px;
-        }
+display:flex;
+justify-content:center;
+align-items:center;
 
-        .form-group label {
-            display: block;
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 1.2px;
-            color: #a0aec0;
-            margin-bottom: 6px;
-            font-weight: 600;
-        }
+overflow:hidden;
 
-        .form-group .input-wrap {
-            position: relative;
-        }
+}
 
-        .form-group .input-wrap i {
-            position: absolute;
-            left: 14px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #64748b;
-            font-size: 16px;
-        }
+body::before{
 
-        .form-group input {
-            width: 100%;
-            padding: 14px 14px 14px 44px;
-            background: rgba(15, 18, 25, 0.7);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 10px;
-            color: #f1f5f9;
-            font-size: 15px;
-            transition: all 0.3s ease;
-        }
+content:'';
 
-        .form-group input:focus {
-            outline: none;
-            border-color: #4fd1c5;
-            box-shadow: 0 0 0 4px rgba(79, 209, 197, 0.15);
-            background: rgba(15, 18, 25, 0.9);
-        }
+position:absolute;
 
-        .form-group input::placeholder {
-            color: #64748b;
-            font-weight: 300;
-        }
+width:450px;
+height:450px;
 
-        .btn-submit {
-            width: 100%;
-            padding: 16px;
-            background: linear-gradient(135deg, #3182ce, #2b6cb0);
-            color: #fff;
-            border: none;
-            border-radius: 10px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.25s ease;
-            margin-top: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            letter-spacing: 0.3px;
-        }
+background:#2563eb;
 
-        .btn-submit:hover {
-            background: linear-gradient(135deg, #2b6cb0, #1a4f8b);
-            box-shadow: 0 8px 24px rgba(49, 130, 206, 0.3);
-            transform: scale(1.01);
-        }
+border-radius:50%;
 
-        .btn-submit i {
-            font-size: 18px;
-        }
+filter:blur(180px);
 
-        .auth-footer {
-            text-align: center;
-            margin-top: 28px;
-            font-size: 14px;
-            color: #94a3b8;
-        }
+top:-100px;
+left:-120px;
 
-        .auth-footer a {
-            color: #63b3ed;
-            text-decoration: none;
-            font-weight: 600;
-            transition: color 0.2s;
-        }
+opacity:.45;
 
-        .auth-footer a:hover {
-            color: #4fd1c5;
-            text-decoration: underline;
-        }
+}
 
-        /* Responsive */
-        @media (max-width: 480px) {
-            .auth-container {
-                padding: 28px 20px;
-            }
-            .brand h2 {
-                font-size: 24px;
-            }
-        }
-    </style>
+body::after{
+
+content:'';
+
+position:absolute;
+
+width:450px;
+height:450px;
+
+background:#06b6d4;
+
+border-radius:50%;
+
+filter:blur(180px);
+
+bottom:-120px;
+right:-100px;
+
+opacity:.35;
+
+}
+
+.login-card{
+
+width:430px;
+
+background:rgba(255,255,255,.08);
+
+backdrop-filter:blur(18px);
+
+border:1px solid rgba(255,255,255,.12);
+
+border-radius:25px;
+
+padding:40px;
+
+box-shadow:0 25px 70px rgba(0,0,0,.45);
+
+z-index:5;
+
+animation:fade .8s;
+
+}
+
+@keyframes fade{
+
+from{
+
+opacity:0;
+transform:translateY(40px);
+
+}
+
+to{
+
+opacity:1;
+transform:translateY(0);
+
+}
+
+}
+
+.logo{
+
+width:90px;
+height:90px;
+
+margin:auto;
+
+border-radius:50%;
+
+display:flex;
+justify-content:center;
+align-items:center;
+
+font-size:40px;
+
+background:linear-gradient(135deg,#2563eb,#06b6d4);
+
+color:white;
+
+box-shadow:0 10px 30px rgba(37,99,235,.5);
+
+}
+
+.title{
+
+text-align:center;
+
+margin-top:20px;
+
+color:white;
+
+font-size:32px;
+
+font-weight:700;
+
+}
+
+.subtitle{
+
+text-align:center;
+
+color:#d1d5db;
+
+margin-bottom:30px;
+
+}
+
+.form-control{
+
+background:rgba(255,255,255,.08);
+
+border:none;
+
+height:52px;
+
+color:white;
+
+padding-left:45px;
+
+}
+
+.form-control:focus{
+
+background:rgba(255,255,255,.12);
+
+color:white;
+
+box-shadow:0 0 0 .2rem rgba(37,99,235,.3);
+
+}
+
+.form-control::placeholder{
+
+color:#cbd5e1;
+
+}
+
+.input-box{
+
+position:relative;
+
+margin-bottom:20px;
+
+}
+
+.input-box i{
+
+position:absolute;
+
+left:15px;
+
+top:17px;
+
+color:#60a5fa;
+
+}
+
+.password-eye{
+
+position:absolute;
+
+right:18px;
+
+top:17px;
+
+cursor:pointer;
+
+color:white;
+
+}
+
+.btn-login{
+
+width:100%;
+
+height:52px;
+
+border:none;
+
+border-radius:12px;
+
+font-size:17px;
+
+font-weight:600;
+
+background:linear-gradient(90deg,#2563eb,#06b6d4);
+
+color:white;
+
+transition:.3s;
+
+}
+
+.btn-login:hover{
+
+transform:translateY(-2px);
+
+box-shadow:0 10px 25px rgba(37,99,235,.4);
+
+}
+
+.footer{
+
+margin-top:22px;
+
+text-align:center;
+
+color:#d1d5db;
+
+}
+
+.footer a{
+
+color:#38bdf8;
+
+text-decoration:none;
+
+font-weight:600;
+
+}
+
+.footer a:hover{
+
+text-decoration:underline;
+
+}
+
+.alert{
+
+border-radius:12px;
+
+}
+
+.version{
+
+position:absolute;
+
+bottom:20px;
+
+left:50%;
+
+transform:translateX(-50%);
+
+color:white;
+
+font-size:14px;
+
+opacity:.8;
+
+}
+
+</style>
+
 </head>
+
 <body>
-    <div class="auth-container">
-        <div class="brand">
-            <i class="fas fa-robot icon"></i>
-            <h2>VisionDesk Core</h2>
-            <p>Authorized Personnel Security Gateway</p>
-        </div>
 
-        {% if error %}
-        <div class="alert-banner">
-            <i class="fas fa-exclamation-circle"></i> {{ error }}
-        </div>
-        {% endif %}
+<div class="login-card">
 
-        <form method="POST">
-            <div class="form-group">
-                <label for="username">Security Operator Handle</label>
-                <div class="input-wrap">
-                    <i class="fas fa-user"></i>
-                    <input type="text" id="username" name="username" placeholder="Username" required autocomplete="off" />
-                </div>
-            </div>
+<div class="logo">
 
-            <div class="form-group">
-                <label for="password">Cryptographic Passkey</label>
-                <div class="input-wrap">
-                    <i class="fas fa-lock"></i>
-                    <input type="password" id="password" name="password" placeholder="Password" required />
-                </div>
-            </div>
+<i class="fa-solid fa-robot"></i>
 
-            <button type="submit" class="btn-submit">
-                <i class="fas fa-shield-alt"></i> Initialize Authentication
-            </button>
-        </form>
+</div>
 
-        <div class="auth-footer">
-            New operator node? <a href="/register">Register Access Profile</a>
-        </div>
-    </div>
+<div class="title">
+
+VisionDesk AI
+
+</div>
+
+<div class="subtitle">
+
+Smart PPE Detection & Document Intelligence
+
+</div>
+
+{% if error %}
+
+<div class="alert alert-danger">
+
+<i class="fa-solid fa-circle-exclamation"></i>
+
+{{ error }}
+
+</div>
+
+{% endif %}
+
+<form method="POST">
+
+<div class="input-box">
+
+<i class="fa-solid fa-user"></i>
+
+<input
+
+type="text"
+
+class="form-control"
+
+name="username"
+
+placeholder="Enter Username"
+
+required>
+
+</div>
+
+<div class="input-box">
+
+<i class="fa-solid fa-lock"></i>
+
+<input
+
+type="password"
+
+id="password"
+
+class="form-control"
+
+name="password"
+
+placeholder="Enter Password"
+
+required>
+
+<i
+
+class="fa-solid fa-eye password-eye"
+
+onclick="togglePassword()">
+
+</i>
+
+</div>
+
+<button class="btn-login">
+
+<i class="fa-solid fa-arrow-right-to-bracket"></i>
+
+Login Securely
+
+</button>
+
+</form>
+
+<div class="footer">
+
+Don't have an account?
+
+<a href="/register">
+
+Create Account
+
+</a>
+
+</div>
+
+</div>
+
+<div class="version">
+
+VisionDesk AI • Version 3.0 • Document Intelligence
+
+</div>
+
+<script>
+
+function togglePassword(){
+
+const password=document.getElementById("password");
+
+const icon=document.querySelector(".password-eye");
+
+if(password.type==="password"){
+
+password.type="text";
+
+icon.classList.replace("fa-eye","fa-eye-slash");
+
+}else{
+
+password.type="password";
+
+icon.classList.replace("fa-eye-slash","fa-eye");
+
+}
+
+}
+
+</script>
+
 </body>
 </html>

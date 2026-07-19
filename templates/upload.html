@@ -1,128 +1,684 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>VisionDesk AI · Upload Media</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VisionDesk AI | Upload</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
     <style>
-        /* Same styles as dashboard – keep consistent */
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: #f4f6fa; font-family: 'Inter', sans-serif; color: #1e293b; min-height: 100vh; padding-bottom: 40px; }
-        .navbar { background: #ffffff; box-shadow: 0 2px 12px rgba(0,0,0,0.04); padding: 16px 40px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 50; border-bottom: 1px solid #e9edf2; }
-        .brand { font-size: 24px; font-weight: 700; color: #0f172a; letter-spacing: -0.4px; cursor: pointer; display: flex; align-items: center; gap: 8px; }
-        .brand span { color: #2563eb; }
-        .nav-links { display: flex; align-items: center; gap: 28px; }
-        .nav-links a { color: #475569; text-decoration: none; font-size: 14px; font-weight: 500; transition: color 0.2s; display: flex; align-items: center; gap: 6px; }
-        .nav-links a:hover { color: #2563eb; }
-        .nav-links a.active { color: #2563eb; font-weight: 600; }
-        .user-meta { color: #475569; font-size: 14px; display: flex; align-items: center; gap: 6px; }
-        .user-meta i { color: #2563eb; }
-        .btn-logout { background: transparent; border: 1px solid #e2e8f0; color: #475569; padding: 6px 16px; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; text-decoration: none; transition: all 0.2s; }
-        .btn-logout:hover { background: #fee2e2; border-color: #f87171; color: #b91c1c; }
-        .container { max-width: 800px; margin: 40px auto; padding: 0 24px; }
-        .upload-card { background: #ffffff; border-radius: 16px; padding: 40px; border: 1px solid #e9edf2; box-shadow: 0 4px 12px rgba(0,0,0,0.02); }
-        .upload-card h2 { font-size: 28px; font-weight: 700; color: #0f172a; margin-bottom: 8px; }
-        .upload-card .sub { color: #64748b; font-size: 16px; margin-bottom: 32px; }
-        .drop-zone { border: 2px dashed #d1d5db; border-radius: 12px; padding: 60px 20px; text-align: center; background: #fafbfc; transition: background 0.2s; cursor: pointer; }
-        .drop-zone:hover { background: #f1f5f9; border-color: #2563eb; }
-        .drop-zone i { font-size: 48px; color: #94a3b8; margin-bottom: 12px; }
-        .drop-zone p { color: #475569; font-size: 16px; }
-        .drop-zone .hint { color: #94a3b8; font-size: 14px; margin-top: 8px; }
-        .file-input { display: none; }
-        .btn-submit { background: #2563eb; color: #fff; border: none; padding: 14px 36px; border-radius: 10px; font-size: 16px; font-weight: 600; cursor: pointer; transition: background 0.2s; margin-top: 24px; width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; }
-        .btn-submit:hover { background: #1d4ed8; }
-        .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; }
-        @media (max-width: 600px) { .navbar { flex-wrap: wrap; padding: 12px 20px; gap: 12px; } .nav-links { flex-wrap: wrap; gap: 16px; } .upload-card { padding: 24px; } }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            background: #08111f;
+            color: #fff;
+            overflow-x: hidden;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 270px;
+            height: 100vh;
+            background: #0f172a;
+            padding: 30px 20px;
+            border-right: 1px solid rgba(255, 255, 255, .05);
+        }
+
+        .logo {
+            font-size: 28px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 45px;
+        }
+
+        .logo span {
+            color: #38bdf8;
+        }
+
+        .logo i {
+            color: #38bdf8;
+            font-size: 34px;
+        }
+
+        .menu {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .menu a {
+            text-decoration: none;
+            color: #d1d5db;
+            padding: 14px 18px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            transition: .3s;
+        }
+
+        .menu a:hover {
+            background: #2563eb;
+            color: white;
+            transform: translateX(5px);
+        }
+
+        .menu a.active {
+            background: linear-gradient(90deg, #2563eb, #06b6d4);
+            color: white;
+        }
+
+        /* Main */
+        .main {
+            margin-left: 270px;
+            padding: 35px;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 35px;
+        }
+
+        .profile {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .avatar {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, #2563eb, #06b6d4);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+        }
+
+        /* Upload Tabs */
+        .upload-tabs {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .tab-btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: .3s;
+            background: #1e293b;
+            color: #94a3b8;
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(90deg, #2563eb, #06b6d4);
+            color: white;
+        }
+
+        .tab-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        /* Upload Card */
+        .upload-card {
+            background: #111c30;
+            padding: 40px;
+            border-radius: 22px;
+            border: 1px solid rgba(255, 255, 255, .05);
+            box-shadow: 0 20px 45px rgba(0, 0, 0, .35);
+        }
+
+        .upload-section {
+            display: none;
+        }
+
+        .upload-section.active {
+            display: block;
+        }
+
+        /* Drop Area */
+        .drop-area {
+            border: 3px dashed #2563eb;
+            border-radius: 20px;
+            padding: 60px;
+            text-align: center;
+            cursor: pointer;
+            transition: .35s;
+        }
+
+        .drop-area:hover {
+            background: #15233d;
+        }
+
+        .drop-area i {
+            font-size: 70px;
+            color: #38bdf8;
+            margin-bottom: 20px;
+        }
+
+        .drop-area h2 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .drop-area p {
+            color: #94a3b8;
+        }
+
+        .drop-area .supported-formats {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #64748b;
+        }
+
+        input[type=file] {
+            display: none;
+        }
+
+        .file-info {
+            margin-top: 25px;
+            display: none;
+            background: #18253d;
+            padding: 15px;
+            border-radius: 12px;
+        }
+
+        .preview {
+            margin-top: 25px;
+            display: none;
+        }
+
+        .preview img {
+            width: 100%;
+            max-height: 420px;
+            border-radius: 15px;
+            object-fit: cover;
+        }
+
+        .preview video {
+            width: 100%;
+            border-radius: 15px;
+        }
+
+        .upload-btn {
+            margin-top: 25px;
+            width: 100%;
+            height: 58px;
+            font-size: 18px;
+            font-weight: 600;
+            border: none;
+            border-radius: 14px;
+            background: linear-gradient(90deg, #2563eb, #06b6d4);
+            color: white;
+            transition: .3s;
+        }
+
+        .upload-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 35px rgba(37, 99, 235, .4);
+        }
+
+        .progress {
+            margin-top: 25px;
+            height: 12px;
+            display: none;
+        }
+
+        .progress-bar {
+            font-weight: bold;
+        }
+
+        #loadingScreen {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(5, 10, 20, .92);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        .loader-box {
+            text-align: center;
+            color: white;
+        }
+
+        .loader-box h3 {
+            margin-top: 20px;
+            font-size: 30px;
+        }
+
+        .loader-box p {
+            color: #94a3b8;
+            margin-top: 10px;
+        }
+
+        /* Document Info Box */
+        .document-info {
+            background: #18253d;
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .document-info .keyword-tag {
+            display: inline-block;
+            background: #2563eb;
+            padding: 4px 12px;
+            margin: 3px;
+            border-radius: 20px;
+            font-size: 12px;
+        }
+
+        .status-badge {
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .status-badge.success {
+            background: #16a34a;
+            color: white;
+        }
+
+        .status-badge.error {
+            background: #dc2626;
+            color: white;
+        }
+
+        .status-badge.info {
+            background: #2563eb;
+            color: white;
+        }
+
+        @media(max-width:900px) {
+            .sidebar {
+                width: 80px;
+            }
+            .sidebar .logo {
+                font-size: 0;
+                justify-content: center;
+            }
+            .sidebar .logo span {
+                display: none;
+            }
+            .sidebar .menu a {
+                justify-content: center;
+                font-size: 0;
+            }
+            .sidebar .menu a i {
+                font-size: 22px;
+                margin: 0;
+            }
+            .main {
+                margin-left: 80px;
+            }
+            .upload-tabs {
+                flex-direction: column;
+            }
+        }
     </style>
 </head>
+
 <body>
 
-    <!-- NAVIGATION (same as dashboard) -->
-    <nav class="navbar">
-        <div class="brand" onclick="window.location.href='/'">
-            <i class="fas fa-robot" style="color:#2563eb;"></i> Vision<span>Desk</span> AI
+    <div class="sidebar">
+        <div class="logo">
+            <i class="fa-solid fa-robot"></i>
+            Vision<span>Desk</span>
         </div>
-        <div class="nav-links">
-            <a href="/"><i class="fas fa-clipboard-list"></i> Dashboard</a>
-            <a href="/upload-feed" class="active"><i class="fas fa-upload"></i> Upload Media</a>
-            <span class="user-meta">
-                <i class="fas fa-user-circle"></i>
-                <strong style="color:#0f172a;">{{ user }}</strong>
-                <span style="color:#94a3b8;">({{ role }})</span>
-            </span>
-            <a href="/logout" class="btn-logout"><i class="fas fa-sign-out-alt"></i> Terminate</a>
+        <div class="menu">
+            <a href="/">
+                <i class="fa-solid fa-chart-line"></i>
+                Dashboard
+            </a>
+            <a href="/upload-feed" class="active">
+                <i class="fa-solid fa-cloud-arrow-up"></i>
+                Upload
+            </a>
+            <a href="/upload-document">
+                <i class="fa-solid fa-file-pdf"></i>
+                📄 Documents
+            </a>
+            <a href="/search-knowledge">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                🔍 Search Knowledge
+            </a>
+            <a href="/logout">
+                <i class="fa-solid fa-right-from-bracket"></i>
+                Logout
+            </a>
         </div>
-    </nav>
+    </div>
 
-    <!-- MAIN -->
-    <div class="container">
-        <div class="upload-card">
-            <h2><i class="fas fa-cloud-upload-alt" style="color:#2563eb; margin-right:10px;"></i> Telemetry Media Ingestion Pipeline</h2>
-            <p class="sub">Deploy surveillance asset nodes into the custom computer vision engine for automated object verification.</p>
-
-            <form method="POST" enctype="multipart/form-data" id="uploadForm">
-                <div class="drop-zone" id="dropZone">
-                    <i class="fas fa-file-image"></i>
-                    <p><strong>Select System Telemetry File</strong></p>
-                    <p class="hint">Drag &amp; drop image or video assets directly here</p>
-                    <input type="file" name="file" class="file-input" id="fileInput" accept=".jpg,.jpeg,.png,.mp4,.avi,.mov" required />
+    <div class="main">
+        <div class="header">
+            <div>
+                <h2>Upload Center</h2>
+                <p style="color:#94a3b8">Upload media for PPE detection or documents for knowledge extraction</p>
+            </div>
+            <div class="profile">
+                <div class="avatar">{{ user[0]|upper }}</div>
+                <div>
+                    <b>{{ user }}</b>
+                    <br>
+                    <small style="color:#94a3b8">{{ role }}</small>
                 </div>
+            </div>
+        </div>
 
-                <button type="submit" class="btn-submit" id="submitBtn">
-                    <i class="fas fa-play"></i> Initiate Structural Audit Analysis
-                </button>
-            </form>
+        <!-- Upload Tabs -->
+        <div class="upload-tabs">
+            <button class="tab-btn active" onclick="switchTab('media')">
+                <i class="fa-solid fa-image"></i> Media (Images/Videos)
+            </button>
+            <button class="tab-btn" onclick="switchTab('document')">
+                <i class="fa-solid fa-file-pdf"></i> Documents (PDF, DOCX, TXT)
+            </button>
+        </div>
+
+        <!-- Media Upload Section -->
+        <div class="upload-card">
+            <div id="mediaSection" class="upload-section active">
+                <form method="POST" enctype="multipart/form-data" id="mediaUploadForm" action="/upload-feed">
+                    <label for="fileInput">
+                        <div class="drop-area" id="dropArea">
+                            <i class="fa-solid fa-cloud-arrow-up"></i>
+                            <h2>Drag & Drop Media Files Here</h2>
+                            <p>or Click to Browse</p>
+                            <div class="supported-formats">Supported: JPG, PNG, MP4, AVI, MOV</div>
+                        </div>
+                    </label>
+                    <input type="file" name="file" id="fileInput" accept=".jpg,.jpeg,.png,.mp4,.avi,.mov" required>
+                    <div class="file-info" id="fileInfo">
+                        <strong>Selected File:</strong> <span id="fileName"></span>
+                    </div>
+                    <div class="preview" id="preview"></div>
+                    <div class="progress">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" style="width:0%;">0%</div>
+                    </div>
+                    <button type="submit" class="upload-btn">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> Analyze with AI
+                    </button>
+                </form>
+            </div>
+
+            <!-- Document Upload Section -->
+            <div id="documentSection" class="upload-section">
+                <form id="documentUploadForm" enctype="multipart/form-data">
+                    <label for="docInput">
+                        <div class="drop-area" id="docDropArea">
+                            <i class="fa-solid fa-file-pdf"></i>
+                            <h2>Drag & Drop Documents Here</h2>
+                            <p>or Click to Browse</p>
+                            <div class="supported-formats">Supported: PDF, DOCX, TXT, HTML</div>
+                        </div>
+                    </label>
+                    <input type="file" name="document" id="docInput" accept=".pdf,.docx,.txt,.html,.htm" required>
+                    <div class="file-info" id="docFileInfo">
+                        <strong>Selected Document:</strong> <span id="docFileName"></span>
+                    </div>
+                    <div id="docPreview" class="document-info"></div>
+                    <div class="progress" id="docProgress">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" style="width:0%;">0%</div>
+                    </div>
+                    <button type="submit" class="upload-btn" id="docUploadBtn">
+                        <i class="fa-solid fa-brain"></i> Extract Knowledge
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <footer style="margin-top:50px;text-align:center;color:#94a3b8;">
+            <hr style="border-color:rgba(255,255,255,.08);">
+            <p>VisionDesk AI • Smart PPE Detection & Document Intelligence System</p>
+            <p>Powered by Flask • YOLOv8 • MongoDB • OpenCV</p>
+        </footer>
+    </div>
+
+    <!-- Loading Screen -->
+    <div id="loadingScreen">
+        <div class="loader-box">
+            <div class="spinner-border text-info" style="width:4rem;height:4rem;" role="status"></div>
+            <h3>Processing with VisionDesk AI</h3>
+            <p>Please wait...</p>
         </div>
     </div>
 
     <script>
-        const dropZone = document.getElementById('dropZone');
-        const fileInput = document.getElementById('fileInput');
-        const submitBtn = document.getElementById('submitBtn');
+        // ==================== TAB SWITCHING ====================
+        function switchTab(tab) {
+            // Update buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            if (tab === 'media') {
+                document.querySelector('.tab-btn:first-child').classList.add('active');
+                document.getElementById('mediaSection').classList.add('active');
+                document.getElementById('documentSection').classList.remove('active');
+            } else {
+                document.querySelector('.tab-btn:last-child').classList.add('active');
+                document.getElementById('documentSection').classList.add('active');
+                document.getElementById('mediaSection').classList.remove('active');
+            }
+        }
 
-        dropZone.addEventListener('click', () => fileInput.click());
+        // ==================== MEDIA UPLOAD ====================
+        const dropArea = document.getElementById("dropArea");
+        const fileInput = document.getElementById("fileInput");
+        const preview = document.getElementById("preview");
+        const fileInfo = document.getElementById("fileInfo");
+        const fileName = document.getElementById("fileName");
 
-        dropZone.addEventListener('dragover', (e) => {
+        dropArea.addEventListener("click", () => fileInput.click());
+
+        dropArea.addEventListener("dragover", (e) => {
             e.preventDefault();
-            dropZone.style.borderColor = '#2563eb';
-            dropZone.style.background = '#eff6ff';
+            dropArea.style.borderColor = "#06b6d4";
+            dropArea.style.background = "#15233d";
         });
 
-        dropZone.addEventListener('dragleave', () => {
-            dropZone.style.borderColor = '#d1d5db';
-            dropZone.style.background = '#fafbfc';
+        dropArea.addEventListener("dragleave", () => {
+            dropArea.style.borderColor = "#2563eb";
+            dropArea.style.background = "transparent";
         });
 
-        dropZone.addEventListener('drop', (e) => {
+        dropArea.addEventListener("drop", (e) => {
             e.preventDefault();
-            dropZone.style.borderColor = '#d1d5db';
-            dropZone.style.background = '#fafbfc';
-            if (e.dataTransfer.files.length) {
-                fileInput.files = e.dataTransfer.files;
-                // Show selected file name
-                const file = e.dataTransfer.files[0];
-                dropZone.querySelector('p').innerHTML = `<strong>${file.name}</strong> (${(file.size/1024/1024).toFixed(2)} MB)`;
-                submitBtn.disabled = false;
+            dropArea.style.borderColor = "#2563eb";
+            dropArea.style.background = "transparent";
+            fileInput.files = e.dataTransfer.files;
+            showPreview(fileInput.files[0]);
+        });
+
+        fileInput.addEventListener("change", () => showPreview(fileInput.files[0]));
+
+        function showPreview(file) {
+            if (!file) return;
+            fileInfo.style.display = "block";
+            fileName.innerHTML = file.name + " (" + (file.size / 1024 / 1024).toFixed(2) + " MB)";
+            preview.style.display = "block";
+            preview.innerHTML = "";
+
+            if (file.type.startsWith("image")) {
+                const img = document.createElement("img");
+                img.src = URL.createObjectURL(file);
+                preview.appendChild(img);
+            } else if (file.type.startsWith("video")) {
+                const video = document.createElement("video");
+                video.src = URL.createObjectURL(file);
+                video.controls = true;
+                preview.appendChild(video);
+            }
+        }
+
+        document.getElementById("mediaUploadForm").addEventListener("submit", function() {
+            document.getElementById("loadingScreen").style.display = "flex";
+            const progress = document.querySelector("#mediaSection .progress");
+            const progressBar = progress.querySelector(".progress-bar");
+            progress.style.display = "flex";
+            let width = 0;
+            const timer = setInterval(function() {
+                width += 2;
+                progressBar.style.width = width + "%";
+                progressBar.innerHTML = width + "%";
+                if (width >= 100) clearInterval(timer);
+            }, 60);
+        });
+
+        // ==================== DOCUMENT UPLOAD ====================
+        const docDropArea = document.getElementById("docDropArea");
+        const docInput = document.getElementById("docInput");
+        const docFileInfo = document.getElementById("docFileInfo");
+        const docFileName = document.getElementById("docFileName");
+        const docPreview = document.getElementById("docPreview");
+
+        docDropArea.addEventListener("click", () => docInput.click());
+
+        docDropArea.addEventListener("dragover", (e) => {
+            e.preventDefault();
+            docDropArea.style.borderColor = "#06b6d4";
+            docDropArea.style.background = "#15233d";
+        });
+
+        docDropArea.addEventListener("dragleave", () => {
+            docDropArea.style.borderColor = "#2563eb";
+            docDropArea.style.background = "transparent";
+        });
+
+        docDropArea.addEventListener("drop", (e) => {
+            e.preventDefault();
+            docDropArea.style.borderColor = "#2563eb";
+            docDropArea.style.background = "transparent";
+            docInput.files = e.dataTransfer.files;
+            showDocPreview(docInput.files[0]);
+        });
+
+        docInput.addEventListener("change", () => showDocPreview(docInput.files[0]));
+
+        function showDocPreview(file) {
+            if (!file) return;
+            docFileInfo.style.display = "block";
+            docFileName.innerHTML = file.name + " (" + (file.size / 1024 / 1024).toFixed(2) + " MB)";
+            docPreview.style.display = "block";
+            docPreview.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <i class="fa-solid fa-file-pdf" style="font-size: 40px; color: #38bdf8;"></i>
+                    <div>
+                        <strong>Document ready for processing</strong>
+                        <p style="color: #94a3b8; margin: 0; font-size: 14px;">
+                            Click "Extract Knowledge" to process this document
+                        </p>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Document upload via AJAX
+        document.getElementById("documentUploadForm").addEventListener("submit", async function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            const progress = document.getElementById("docProgress");
+            const progressBar = progress.querySelector(".progress-bar");
+            const uploadBtn = document.getElementById("docUploadBtn");
+
+            progress.style.display = "flex";
+            uploadBtn.disabled = true;
+            uploadBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processing...';
+
+            let width = 0;
+            const timer = setInterval(function() {
+                width += 2;
+                progressBar.style.width = width + "%";
+                progressBar.innerHTML = width + "%";
+                if (width >= 90) clearInterval(timer);
+            }, 60);
+
+            try {
+                const response = await fetch('/upload-document', {
+                    method: 'POST',
+                    body: formData
+                });
+                const result = await response.json();
+
+                clearInterval(timer);
+                progressBar.style.width = "100%";
+                progressBar.innerHTML = "100%";
+
+                if (result.success) {
+                    docPreview.innerHTML = `
+                        <div style="display: flex; align-items: center; gap: 15px;">
+                            <i class="fa-solid fa-check-circle" style="font-size: 30px; color: #22c55e;"></i>
+                            <div>
+                                <strong style="color: #22c55e;">✅ ${result.message}</strong>
+                                <p style="color: #94a3b8; margin: 0; font-size: 14px;">
+                                    Keywords found: ${Object.values(result.extracted_info.safety_keywords).flat().length}
+                                </p>
+                            </div>
+                        </div>
+                    `;
+                    setTimeout(() => window.location.href = '/upload-document', 2000);
+                } else {
+                    docPreview.innerHTML = `
+                        <div style="display: flex; align-items: center; gap: 15px;">
+                            <i class="fa-solid fa-circle-xmark" style="font-size: 30px; color: #dc2626;"></i>
+                            <div>
+                                <strong style="color: #dc2626;">❌ ${result.error}</strong>
+                            </div>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                clearInterval(timer);
+                docPreview.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <i class="fa-solid fa-circle-xmark" style="font-size: 30px; color: #dc2626;"></i>
+                        <div>
+                            <strong style="color: #dc2626;">❌ Upload failed: ${error.message}</strong>
+                        </div>
+                    </div>
+                `;
+            } finally {
+                uploadBtn.disabled = false;
+                uploadBtn.innerHTML = '<i class="fa-solid fa-brain"></i> Extract Knowledge';
+                setTimeout(() => { progress.style.display = "none"; }, 2000);
             }
         });
 
-        fileInput.addEventListener('change', function() {
-            if (this.files.length) {
-                const file = this.files[0];
-                dropZone.querySelector('p').innerHTML = `<strong>${file.name}</strong> (${(file.size/1024/1024).toFixed(2)} MB)`;
-                submitBtn.disabled = false;
-            }
-        });
-
-        // Disable submit if no file selected
-        document.getElementById('uploadForm').addEventListener('submit', function(e) {
-            if (!fileInput.files.length) {
-                e.preventDefault();
-                alert('Please select a file first.');
-            }
+        // Loading screen for document upload
+        document.getElementById("documentUploadForm").addEventListener("submit", function() {
+            document.getElementById("loadingScreen").style.display = "flex";
+            setTimeout(() => {
+                document.getElementById("loadingScreen").style.display = "none";
+            }, 30000);
         });
     </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
+
 </html>

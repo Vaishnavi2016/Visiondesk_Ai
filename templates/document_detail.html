@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Document Details - VisionDesk</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f5f7fa; }
+        .container { max-width: 900px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .keyword-tag { display: inline-block; background: #e2e8f0; padding: 2px 8px; margin: 2px; border-radius: 3px; font-size: 12px; }
+        .btn { background: #2b6cb0; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; text-decoration: none; display: inline-block; }
+        .btn:hover { background: #1a365d; }
+        .section { margin: 20px 0; border-left: 4px solid #2b6cb0; padding-left: 15px; }
+        .content-preview { background: #f7fafc; padding: 15px; border-radius: 4px; max-height: 300px; overflow-y: auto; white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📄 Document Details</h1>
+        <p><a href="{{ url_for('upload_document') }}" class="btn">← Back to Documents</a></p>
+        
+        <h2>{{ document.filename }}</h2>
+        <p><strong>Uploaded By:</strong> {{ document.uploaded_by }}</p>
+        <p><strong>Upload Date:</strong> {{ document.upload_date }}</p>
+        <p><strong>Status:</strong> {{ document.processing_status }}</p>
+        
+        {% set knowledge = document.get('knowledge_entry', {}) %}
+        
+        <div class="section">
+            <h3>Safety Keywords</h3>
+            {% for category, keywords in knowledge.get('safety_keywords', {}).items() %}
+                <div>
+                    <strong>{{ category|title }}:</strong>
+                    {% for kw in keywords %}
+                    <span class="keyword-tag">{{ kw }}</span>
+                    {% endfor %}
+                </div>
+            {% endfor %}
+        </div>
+        
+        <div class="section">
+            <h3>Extracted Metadata</h3>
+            {% set metadata = knowledge.get('metadata', {}) %}
+            <div><strong>Dates Found:</strong> {{ metadata.get('dates', [])|join(', ') or 'None' }}</div>
+            <div><strong>Numbers Found:</strong> {{ metadata.get('numbers', [])|join(', ') or 'None' }}</div>
+            <div><strong>Key Phrases:</strong> {{ metadata.get('important_phrases', [])|join(', ') or 'None' }}</div>
+        </div>
+        
+        <div class="section">
+            <h3>Document Content Preview</h3>
+            <div class="content-preview">
+                {{ knowledge.get('full_text', '')[:1000] }}...
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Document Intelligence - VisionDesk</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f5f7fa; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .upload-section { background: #f7fafc; border: 2px dashed #cbd5e0; padding: 30px; text-align: center; margin: 20px 0; border-radius: 8px; }
+        .doc-list { margin-top: 20px; }
+        .doc-item { border: 1px solid #e2e8f0; padding: 15px; margin: 10px 0; border-radius: 4px; }
+        .doc-item:hover { background: #f7fafc; }
+        .keyword-tag { display: inline-block; background: #e2e8f0; padding: 2px 8px; margin: 2px; border-radius: 3px; font-size: 12px; }
+        .btn { background: #2b6cb0; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; }
+        .btn:hover { background: #1a365d; }
+        .nav { margin-bottom: 20px; }
+        .nav a { margin-right: 15px; color: #2b6cb0; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📄 Document Intelligence</h1>
+            <div>
+                <span>Welcome, {{ user }} ({{ role }})</span>
+                <a href="{{ url_for('index') }}" class="btn" style="margin-left: 10px;">Dashboard</a>
+                <a href="{{ url_for('logout') }}" class="btn" style="background: #e53e3e;">Logout</a>
+            </div>
+        </div>
+        
+        <div class="nav">
+            <a href="{{ url_for('index') }}">Home</a>
+            <a href="{{ url_for('upload_feed') }}">Upload Media</a>
+            <a href="{{ url_for('upload_document') }}">📄 Documents</a>
+            <a href="{{ url_for('search_knowledge') }}">🔍 Search Knowledge</a>
+            <a href="{{ url_for('export_knowledge_pdf') }}">📊 Export Knowledge Report</a>
+        </div>
+        
+        <div class="upload-section">
+            <h2>Upload Document</h2>
+            <p>Supported formats: PDF, DOCX, TXT, HTML</p>
+            <form id="documentUploadForm" enctype="multipart/form-data">
+                <input type="file" name="document" accept=".pdf,.docx,.txt,.html,.htm" required>
+                <button type="submit" class="btn">Process Document</button>
+            </form>
+            <div id="uploadStatus" style="margin-top: 10px;"></div>
+        </div>
+        
+        <h2>Processed Documents ({{ documents|length }})</h2>
+        <div class="doc-list">
+            {% if documents %}
+                {% for doc in documents %}
+                <div class="doc-item">
+                    <h3>{{ doc.filename }}</h3>
+                    <p><strong>Uploaded:</strong> {{ doc.upload_date }}</p>
+                    <div>
+                        <strong>Safety Keywords:</strong><br>
+                        {% set knowledge = doc.get('knowledge_entry', {}) %}
+                        {% for category, keywords in knowledge.get('safety_keywords', {}).items() %}
+                            <div>
+                                <strong>{{ category|title }}:</strong>
+                                {% for kw in keywords %}
+                                <span class="keyword-tag">{{ kw }}</span>
+                                {% endfor %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <div style="margin-top: 10px;">
+                        <a href="{{ url_for('view_document', doc_id=doc._id) }}" class="btn" style="font-size: 12px;">View Details</a>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <p>No documents processed yet. Upload your first document above!</p>
+            {% endif %}
+        </div>
+    </div>
+    
+    <script>
+        document.getElementById('documentUploadForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            const statusDiv = document.getElementById('uploadStatus');
+            statusDiv.innerHTML = 'Processing document...';
+            
+            try {
+                const response = await fetch('/upload-document', {
+                    method: 'POST',
+                    body: formData
+                });
+                const result = await response.json();
+                
+                if (result.success) {
+                    statusDiv.innerHTML = `<div style="color: green;">✓ ${result.message}</div>`;
+                    setTimeout(() => location.reload(), 2000);
+                } else {
+                    statusDiv.innerHTML = `<div style="color: red;">✗ ${result.error}</div>`;
+                }
+            } catch (error) {
+                statusDiv.innerHTML = `<div style="color: red;">✗ Upload failed: ${error.message}</div>`;
+            }
+        });
+    </script>
+</body>
+</html>

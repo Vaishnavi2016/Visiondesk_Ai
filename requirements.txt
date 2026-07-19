@@ -1,0 +1,11 @@
+Flask==2.3.3
+pymongo==4.5.0
+bcrypt==4.0.1
+opencv-python==4.8.1.78
+opencv-contrib-python==4.8.1.78
+ultralytics==8.0.196
+weasyprint==60.2
+PyPDF2==3.0.1
+python-docx==1.1.0
+beautifulsoup4==4.12.2
+numpy==1.24.3

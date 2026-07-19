@@ -1,5 +1,5 @@
 import os
-from flask import Flask, render_template, request, redirect, url_for, session, render_template_string, make_response
+from flask import Flask, render_template, request, redirect, url_for, session, render_template_string, make_response, jsonify
 from pymongo import MongoClient
 import bcrypt
 import cv2
@@ -7,20 +7,33 @@ from ultralytics import YOLO
 import datetime
 import io
 from xhtml2pdf import pisa
+import PyPDF2
+import docx
+import hashlib
+import re
+from bs4 import BeautifulSoup
+import json
+from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 app.secret_key = 'system_deployment_operational_matrix_secret_key_2026'
 app.config['UPLOAD_FOLDER'] = 'uploads/'
 app.config['RESULT_FOLDER'] = 'static/results/'
+app.config['DOCUMENT_FOLDER'] = 'documents/'
+app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB max file size
 
+# Create necessary directories
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 os.makedirs(app.config['RESULT_FOLDER'], exist_ok=True)
+os.makedirs(app.config['DOCUMENT_FOLDER'], exist_ok=True)
 
 # Establish connection to MongoDB
 client = MongoClient('mongodb://localhost:27017/')
 db = client['visiondesk_db']
 users_col = db['users']
 records_col = db['visual_records']
+documents_col = db['documents']
+knowledge_col = db['knowledge_repository']
 
 # Ingest custom YOLOv8 model brain using explicit absolute path
 import pathlib
@@ -38,6 +51,187 @@ if users_col.count_documents({'username': 'admin'}) == 0:
         'password_hash': hashed_value.decode('utf-8'),
         'role': 'Admin'
     })
+
+# ------------------- DOCUMENT PROCESSING FUNCTIONS -------------------
+
+def extract_text_from_pdf(file_path):
+    """Extract text from PDF files"""
+    text = ""
+    try:
+        with open(file_path, 'rb') as file:
+            pdf_reader = PyPDF2.PdfReader(file)
+            for page in pdf_reader.pages:
+                text += page.extract_text() + "\n"
+    except Exception as e:
+        print(f"Error extracting PDF text: {e}")
+    return text
+
+def extract_text_from_docx(file_path):
+    """Extract text from DOCX files"""
+    text = ""
+    try:
+        doc = docx.Document(file_path)
+        for paragraph in doc.paragraphs:
+            text += paragraph.text + "\n"
+    except Exception as e:
+        print(f"Error extracting DOCX text: {e}")
+    return text
+
+def extract_text_from_txt(file_path):
+    """Extract text from TXT files"""
+    try:
+        with open(file_path, 'r', encoding='utf-8') as file:
+            return file.read()
+    except Exception as e:
+        print(f"Error extracting TXT text: {e}")
+        return ""
+
+def extract_text_from_html(file_path):
+    """Extract text from HTML files"""
+    try:
+        with open(file_path, 'r', encoding='utf-8') as file:
+            soup = BeautifulSoup(file.read(), 'html.parser')
+            return soup.get_text()
+    except Exception as e:
+        print(f"Error extracting HTML text: {e}")
+        return ""
+
+def extract_safety_keywords(text):
+    """Extract safety-related keywords and phrases"""
+    safety_patterns = {
+        'hazards': r'\b(hazard|danger|risk|threat|unsafe|caution|warning)\b',
+        'ppe': r'\b(helmet|hardhat|vest|mask|glove|goggles|earplug|safety shoes)\b',
+        'incidents': r'\b(incident|accident|injury|near miss|fatality|emergency)\b',
+        'compliance': r'\b(compliance|regulation|standard|osha|iso|safety protocol)\b',
+        'inspection': r'\b(inspection|audit|check|verify|monitor|surveillance)\b'
+    }
+    
+    extracted_info = {}
+    for category, pattern in safety_patterns.items():
+        matches = re.findall(pattern, text, re.IGNORECASE)
+        extracted_info[category] = list(set([m.lower() for m in matches]))
+    
+    return extracted_info
+
+def extract_metadata(text):
+    """Extract document metadata like dates, numbers, etc."""
+    metadata = {}
+    
+    # Extract dates
+    date_patterns = [
+        r'\b\d{4}-\d{2}-\d{2}\b',
+        r'\b\d{2}/\d{2}/\d{4}\b',
+        r'\b\d{2}-\d{2}-\d{4}\b',
+        r'\b(January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},\s+\d{4}\b'
+    ]
+    
+    dates = []
+    for pattern in date_patterns:
+        dates.extend(re.findall(pattern, text))
+    metadata['dates'] = list(set(dates))
+    
+    # Extract numbers (potential quantities, counts)
+    numbers = re.findall(r'\b\d+\b', text)
+    metadata['numbers'] = numbers[:20]  # Limit to first 20 numbers
+    
+    # Extract capitalized phrases (potential document titles or important sections)
+    capitalized = re.findall(r'\b[A-Z][A-Z\s]{2,}\b', text)
+    metadata['important_phrases'] = list(set(capitalized))[:10]
+    
+    return metadata
+
+def generate_searchable_content(text, filename):
+    """Generate searchable content with metadata for knowledge repository"""
+    # Extract key information
+    safety_keywords = extract_safety_keywords(text)
+    metadata = extract_metadata(text)
+    
+    # Generate searchable text (lowercase for case-insensitive search)
+    searchable_text = text.lower()
+    
+    # Create knowledge entry
+    knowledge_entry = {
+        'filename': filename,
+        'full_text': text,
+        'searchable_text': searchable_text,
+        'safety_keywords': safety_keywords,
+        'metadata': metadata,
+        'upload_date': datetime.datetime.now(),
+        'document_hash': hashlib.md5(text.encode()).hexdigest()
+    }
+    
+    return knowledge_entry
+
+def process_document(file_path, filename):
+    """Process different document types and extract information"""
+    file_extension = os.path.splitext(filename)[1].lower()
+    
+    # Extract text based on file type
+    if file_extension == '.pdf':
+        text = extract_text_from_pdf(file_path)
+    elif file_extension == '.docx':
+        text = extract_text_from_docx(file_path)
+    elif file_extension == '.txt':
+        text = extract_text_from_txt(file_path)
+    elif file_extension in ['.html', '.htm']:
+        text = extract_text_from_html(file_path)
+    else:
+        return None, "Unsupported document format"
+    
+    if not text or len(text.strip()) == 0:
+        return None, "No text could be extracted from the document"
+    
+    # Generate searchable knowledge content
+    knowledge_entry = generate_searchable_content(text, filename)
+    
+    return knowledge_entry, "Document processed successfully"
+
+def search_knowledge_base(query, search_type='full_text'):
+    """Search the knowledge repository for relevant documents"""
+    results = []
+    
+    if search_type == 'full_text':
+        # Full text search using regex (simple search)
+        query_lower = query.lower()
+        for doc in knowledge_col.find():
+            if query_lower in doc.get('searchable_text', '').lower():
+                # Create a snippet around the search term
+                text = doc.get('full_text', '')
+                index = text.lower().find(query_lower)
+                if index != -1:
+                    start = max(0, index - 100)
+                    end = min(len(text), index + 100 + len(query))
+                    snippet = '...' + text[start:end] + '...'
+                else:
+                    snippet = text[:200] + '...'
+                
+                results.append({
+                    'filename': doc.get('filename'),
+                    'snippet': snippet,
+                    'safety_keywords': doc.get('safety_keywords', {}),
+                    'upload_date': doc.get('upload_date'),
+                    'metadata': doc.get('metadata', {})
+                })
+    
+    elif search_type == 'keyword':
+        # Search by safety keywords
+        for doc in knowledge_col.find():
+            safety_keywords = doc.get('safety_keywords', {})
+            found = False
+            for category, keywords in safety_keywords.items():
+                if any(query.lower() in keyword.lower() for keyword in keywords):
+                    found = True
+                    break
+            if found:
+                results.append({
+                    'filename': doc.get('filename'),
+                    'safety_keywords': safety_keywords,
+                    'upload_date': doc.get('upload_date')
+                })
+    
+    return results
+
+# ------------------- ROUTES -------------------
 
 @app.route('/')
 def index():
@@ -148,10 +342,229 @@ def upload_feed():
         'status': compliance_state,
         'violations': violation_incident_reports,
         'summary': {'workers': count_workers, 'helmets': count_helmets, 'vests': count_vests, 'masks': count_masks},
-        'raw_payload': extracted_tags
+        'raw_payload': extracted_tags,
+        'upload_date': datetime.datetime.now()
     })
     return redirect(url_for('index'))
 
+# NEW ROUTE: Document Upload and Processing
+@app.route('/upload-document', methods=['GET', 'POST'])
+def upload_document():
+    if 'username' not in session:
+        return redirect(url_for('login'))
+    
+    if request.method == 'GET':
+        # Get all processed documents for the current user
+        user_docs = list(documents_col.find({'uploaded_by': session['username']}).sort('_id', -1))
+        return render_template('documents.html', user=session['username'], role=session['role'], documents=user_docs)
+    
+    if 'document' not in request.files:
+        return jsonify({'error': 'No file uploaded'}), 400
+    
+    file = request.files['document']
+    if file.filename == '':
+        return jsonify({'error': 'No file selected'}), 400
+    
+    # Secure filename
+    filename = secure_filename(file.filename)
+    file_path = os.path.join(app.config['DOCUMENT_FOLDER'], filename)
+    file.save(file_path)
+    
+    # Process the document
+    knowledge_entry, message = process_document(file_path, filename)
+    
+    if knowledge_entry is None:
+        return jsonify({'error': message}), 400
+    
+    # Store in MongoDB
+    document_record = {
+        'uploaded_by': session['username'],
+        'filename': filename,
+        'file_path': file_path,
+        'upload_date': datetime.datetime.now(),
+        'knowledge_entry': knowledge_entry,
+        'processing_status': 'completed'
+    }
+    
+    # Insert into documents collection
+    doc_id = documents_col.insert_one(document_record).inserted_id
+    
+    # Also store in knowledge repository for searching
+    knowledge_entry['document_id'] = doc_id
+    knowledge_entry['uploaded_by'] = session['username']
+    knowledge_col.insert_one(knowledge_entry)
+    
+    return jsonify({
+        'success': True,
+        'message': message,
+        'document_id': str(doc_id),
+        'filename': filename,
+        'extracted_info': {
+            'safety_keywords': knowledge_entry.get('safety_keywords', {}),
+            'metadata': knowledge_entry.get('metadata', {})
+        }
+    })
+
+# NEW ROUTE: Search Knowledge Repository
+@app.route('/search-knowledge', methods=['GET', 'POST'])
+def search_knowledge():
+    if 'username' not in session:
+        return redirect(url_for('login'))
+    
+    if request.method == 'GET':
+        return render_template('knowledge_search.html', user=session['username'], role=session['role'])
+    
+    query = request.form.get('query', '')
+    search_type = request.form.get('search_type', 'full_text')
+    
+    if not query:
+        return jsonify({'error': 'Search query is required'}), 400
+    
+    # Search the knowledge base
+    results = search_knowledge_base(query, search_type)
+    
+    return render_template('knowledge_search.html', 
+                         user=session['username'], 
+                         role=session['role'],
+                         query=query,
+                         results=results,
+                         result_count=len(results))
+
+# NEW ROUTE: Get Document Details
+@app.route('/document/<doc_id>')
+def view_document(doc_id):
+    if 'username' not in session:
+        return redirect(url_for('login'))
+    
+    from bson.objectid import ObjectId
+    try:
+        doc = documents_col.find_one({'_id': ObjectId(doc_id), 'uploaded_by': session['username']})
+        if not doc:
+            return "Document not found or access denied", 404
+        
+        return render_template('document_detail.html', 
+                             user=session['username'], 
+                             role=session['role'],
+                             document=doc)
+    except:
+        return "Invalid document ID", 400
+
+# NEW ROUTE: Get Knowledge Statistics
+@app.route('/knowledge-stats')
+def knowledge_stats():
+    if 'username' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    total_docs = documents_col.count_documents({'uploaded_by': session['username']})
+    
+    # Count documents by type
+    doc_types = {}
+    for doc in documents_col.find({'uploaded_by': session['username']}):
+        ext = os.path.splitext(doc.get('filename', ''))[1].lower()
+        doc_types[ext] = doc_types.get(ext, 0) + 1
+    
+    # Count documents with safety keywords
+    keyword_counts = {}
+    for doc in documents_col.find({'uploaded_by': session['username']}):
+        knowledge = doc.get('knowledge_entry', {})
+        keywords = knowledge.get('safety_keywords', {})
+        for category, kw_list in keywords.items():
+            for kw in kw_list:
+                keyword_counts[kw] = keyword_counts.get(kw, 0) + 1
+    
+    return jsonify({
+        'total_documents': total_docs,
+        'document_types': doc_types,
+        'top_keywords': sorted(keyword_counts.items(), key=lambda x: x[1], reverse=True)[:10]
+    })
+
+# NEW ROUTE: Export Knowledge Report
+@app.route('/export-knowledge-pdf')
+def export_knowledge_pdf():
+    if 'username' not in session:
+        return redirect(url_for('login'))
+    
+    user_docs = list(documents_col.find({'uploaded_by': session['username']}).sort('_id', -1))
+    
+    report_template = """
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="utf-8">
+        <style>
+            body { font-family: Helvetica, Arial, sans-serif; color: #2d3748; }
+            .header { border-bottom: 2px solid #2b6cb0; padding-bottom: 10px; margin-bottom: 20px; }
+            .title { font-size: 22pt; font-weight: bold; color: #1a365d; }
+            .subtitle { font-size: 10pt; color: #4a5568; }
+            .doc-card { border: 1px solid #e2e8f0; padding: 15px; margin-bottom: 15px; }
+            .doc-filename { font-size: 12pt; font-weight: bold; color: #2b6cb0; }
+            .keywords { background: #f7fafc; padding: 8px; margin: 5px 0; }
+            .keyword-tag { display: inline-block; background: #e2e8f0; padding: 2px 8px; margin: 2px; border-radius: 3px; font-size: 8pt; }
+            .section { margin-top: 20px; border-left: 4px solid #2b6cb0; padding-left: 10px; }
+        </style>
+    </head>
+    <body>
+        <div class="header">
+            <div class="title">VisionDesk Knowledge Repository Report</div>
+            <div class="subtitle">Document Intelligence & Knowledge Extraction Summary</div>
+            <div class="subtitle">Generated by: {{ user }} ({{ role }}) - {{ date_str }}</div>
+        </div>
+        
+        <h3>Processed Documents: {{ documents|length }}</h3>
+        
+        {% for doc in documents %}
+        <div class="doc-card">
+            <div class="doc-filename">{{ doc.filename }}</div>
+            <div><strong>Uploaded:</strong> {{ doc.upload_date }}</div>
+            
+            {% set knowledge = doc.get('knowledge_entry', {}) %}
+            
+            <div class="section">Safety Keywords</div>
+            <div class="keywords">
+                {% for category, keywords in knowledge.get('safety_keywords', {}).items() %}
+                <div><strong>{{ category|title }}:</strong>
+                    {% for kw in keywords %}
+                    <span class="keyword-tag">{{ kw }}</span>
+                    {% endfor %}
+                </div>
+                {% endfor %}
+            </div>
+            
+            <div class="section">Extracted Metadata</div>
+            <div>
+                {% set metadata = knowledge.get('metadata', {}) %}
+                <div><strong>Dates:</strong> {{ metadata.get('dates', [])|join(', ') }}</div>
+                <div><strong>Numbers:</strong> {{ metadata.get('numbers', [])|join(', ') }}</div>
+                <div><strong>Key Phrases:</strong> {{ metadata.get('important_phrases', [])|join(', ') }}</div>
+            </div>
+        </div>
+        {% endfor %}
+    </body>
+    </html>
+    """
+    
+    now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    rendered_html = render_template_string(
+        report_template, 
+        user=session['username'], 
+        role=session['role'], 
+        documents=user_docs,
+        date_str=now
+    )
+    
+    pdf_buffer = io.BytesIO()
+    pisa_status = pisa.CreatePDF(rendered_html, dest=pdf_buffer)
+    
+    if pisa_status.err:
+        return "Error compiling PDF report", 500
+    
+    pdf_bytes = pdf_buffer.getvalue()
+    pdf_buffer.close()
+    
+    response = make_response(pdf_bytes)
+    response.headers['Content-Type'] = 'application/pdf'
+    response.headers['Content-Disposition'] = f'attachment; filename=Knowledge_Report_{datetime.date.today()}.pdf'
+    return response
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -284,7 +697,8 @@ def handle_upload():
         'status': compliance_state,
         'violations': violation_incident_reports,
         'summary': {'workers': count_workers, 'helmets': count_helmets, 'vests': count_vests, 'masks': count_masks},
-        'raw_payload': extracted_tags
+        'raw_payload': extracted_tags,
+        'upload_date': datetime.datetime.now()
     })
     return redirect(url_for('index'))
 
