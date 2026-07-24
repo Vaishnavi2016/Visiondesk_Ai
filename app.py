@@ -100,10 +100,11 @@ def extract_safety_keywords(text):
     """Extract safety-related keywords and phrases"""
     safety_patterns = {
         'hazards': r'\b(hazard|danger|risk|threat|unsafe|caution|warning)\b',
-        'ppe': r'\b(helmet|hardhat|vest|mask|glove|goggles|earplug|safety shoes)\b',
-        'incidents': r'\b(incident|accident|injury|near miss|fatality|emergency)\b',
-        'compliance': r'\b(compliance|regulation|standard|osha|iso|safety protocol)\b',
-        'inspection': r'\b(inspection|audit|check|verify|monitor|surveillance)\b'
+        'ppe': r'\b(helmet|hardhat|vest|mask|glove|goggles|earplug|safety shoes|ppe|protective)\b',
+        'incidents': r'\b(incident|accident|injury|near miss|fatality|emergency|violation|non-compliant)\b',
+        'compliance': r'\b(compliance|regulation|standard|osha|iso|safety protocol|policy|procedure)\b',
+        'inspection': r'\b(inspection|audit|check|verify|monitor|surveillance|assessment)\b',
+        'procedures': r'\b(procedure|protocol|guideline|manual|instruction|step|process)\b'
     }
     
     extracted_info = {}
@@ -137,6 +138,19 @@ def extract_metadata(text):
     # Extract capitalized phrases (potential document titles or important sections)
     capitalized = re.findall(r'\b[A-Z][A-Z\s]{2,}\b', text)
     metadata['important_phrases'] = list(set(capitalized))[:10]
+    
+    # Extract section headers (common in safety documents)
+    section_patterns = [
+        r'(?i)section\s+\d+\.?\d*',
+        r'(?i)chapter\s+\d+',
+        r'(?i)appendix\s+[A-Z]',
+        r'(?i)policy\s+\d+\.?\d*',
+        r'(?i)procedure\s+\d+\.?\d*'
+    ]
+    sections = []
+    for pattern in section_patterns:
+        sections.extend(re.findall(pattern, text))
+    metadata['sections'] = list(set(sections))
     
     return metadata
 
@@ -189,28 +203,42 @@ def process_document(file_path, filename):
 def search_knowledge_base(query, search_type='full_text'):
     """Search the knowledge repository for relevant documents"""
     results = []
+    query_lower = query.lower()
     
     if search_type == 'full_text':
         # Full text search using regex (simple search)
-        query_lower = query.lower()
         for doc in knowledge_col.find():
-            if query_lower in doc.get('searchable_text', '').lower():
-                # Create a snippet around the search term
+            searchable_text = doc.get('searchable_text', '').lower()
+            if query_lower in searchable_text:
+                # Create a snippet around the search term with context
                 text = doc.get('full_text', '')
-                index = text.lower().find(query_lower)
-                if index != -1:
-                    start = max(0, index - 100)
-                    end = min(len(text), index + 100 + len(query))
+                # Find all occurrences and create snippets
+                snippets = []
+                start_pos = 0
+                while True:
+                    index = text.lower().find(query_lower, start_pos)
+                    if index == -1:
+                        break
+                    start = max(0, index - 150)
+                    end = min(len(text), index + 150 + len(query))
                     snippet = '...' + text[start:end] + '...'
-                else:
-                    snippet = text[:200] + '...'
+                    snippets.append(snippet)
+                    start_pos = index + 1
+                
+                # Combine snippets, limit to 3
+                combined_snippet = ' '.join(snippets[:3]) if snippets else text[:300] + '...'
+                
+                # Get section references if available
+                metadata = doc.get('metadata', {})
+                sections = metadata.get('sections', [])
                 
                 results.append({
                     'filename': doc.get('filename'),
-                    'snippet': snippet,
+                    'snippet': combined_snippet,
                     'safety_keywords': doc.get('safety_keywords', {}),
                     'upload_date': doc.get('upload_date'),
-                    'metadata': doc.get('metadata', {})
+                    'metadata': metadata,
+                    'sections': sections
                 })
     
     elif search_type == 'keyword':
@@ -218,15 +246,18 @@ def search_knowledge_base(query, search_type='full_text'):
         for doc in knowledge_col.find():
             safety_keywords = doc.get('safety_keywords', {})
             found = False
+            matched_keywords = []
             for category, keywords in safety_keywords.items():
-                if any(query.lower() in keyword.lower() for keyword in keywords):
-                    found = True
-                    break
+                for keyword in keywords:
+                    if query_lower in keyword.lower():
+                        found = True
+                        matched_keywords.append(keyword)
             if found:
                 results.append({
                     'filename': doc.get('filename'),
                     'safety_keywords': safety_keywords,
-                    'upload_date': doc.get('upload_date')
+                    'upload_date': doc.get('upload_date'),
+                    'matched_keywords': list(set(matched_keywords))[:5]
                 })
     
     return results
@@ -243,7 +274,6 @@ def index():
     
     return render_template('dashboard.html', user=session['username'], role=session['role'], data=historical_logs)
 
-# NEW ROUTE: To display and handle the dedicated upload page layout
 @app.route('/upload-feed', methods=['GET', 'POST'])
 def upload_feed():
     if 'username' not in session:
@@ -347,15 +377,26 @@ def upload_feed():
     })
     return redirect(url_for('index'))
 
-# NEW ROUTE: Document Upload and Processing
 @app.route('/upload-document', methods=['GET', 'POST'])
 def upload_document():
     if 'username' not in session:
         return redirect(url_for('login'))
     
     if request.method == 'GET':
-        # Get all processed documents for the current user
+        # Get all processed documents for the current user with processing status
         user_docs = list(documents_col.find({'uploaded_by': session['username']}).sort('_id', -1))
+        # Add status for each document (simulate processing)
+        for doc in user_docs:
+            # Simulate different processing statuses for demo
+            if 'status' not in doc:
+                # Randomly assign status for demo purposes
+                import random
+                statuses = ['Processed', 'Analyzing', 'Completed']
+                doc['status'] = statuses[random.randint(0, 2)]
+                if doc['status'] == 'Analyzing':
+                    doc['progress'] = random.randint(30, 90)
+                else:
+                    doc['progress'] = 100
         return render_template('documents.html', user=session['username'], role=session['role'], documents=user_docs)
     
     if 'document' not in request.files:
@@ -376,6 +417,15 @@ def upload_document():
     if knowledge_entry is None:
         return jsonify({'error': message}), 400
     
+    # Get document section for display
+    sections = knowledge_entry.get('metadata', {}).get('sections', [])
+    if not sections and knowledge_entry.get('full_text'):
+        # Try to extract sections from content
+        text = knowledge_entry.get('full_text', '')
+        section_matches = re.findall(r'(?i)(section|chapter|part)\s+\d+\.?\d*[:.]?\s*([^\n]+)', text)
+        if section_matches:
+            sections = [f"{match[0]} {match[1].strip()}" for match in section_matches[:5]]
+    
     # Store in MongoDB
     document_record = {
         'uploaded_by': session['username'],
@@ -383,7 +433,10 @@ def upload_document():
         'file_path': file_path,
         'upload_date': datetime.datetime.now(),
         'knowledge_entry': knowledge_entry,
-        'processing_status': 'completed'
+        'processing_status': 'completed',
+        'status': 'Processed',
+        'progress': 100,
+        'sections': sections[:5]  # Store first 5 sections
     }
     
     # Insert into documents collection
@@ -405,7 +458,6 @@ def upload_document():
         }
     })
 
-# NEW ROUTE: Search Knowledge Repository
 @app.route('/search-knowledge', methods=['GET', 'POST'])
 def search_knowledge():
     if 'username' not in session:
@@ -430,7 +482,6 @@ def search_knowledge():
                          results=results,
                          result_count=len(results))
 
-# NEW ROUTE: Get Document Details
 @app.route('/document/<doc_id>')
 def view_document(doc_id):
     if 'username' not in session:
@@ -449,7 +500,83 @@ def view_document(doc_id):
     except:
         return "Invalid document ID", 400
 
-# NEW ROUTE: Get Knowledge Statistics
+@app.route('/delete-document/<doc_id>', methods=['POST'])
+def delete_document(doc_id):
+    if 'username' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    from bson.objectid import ObjectId
+    from bson.errors import InvalidId
+    
+    try:
+        print(f"Attempting to delete document with ID: {doc_id}")
+        
+        # First, find the document to get its file path
+        doc = None
+        obj_id = None
+        
+        # Try to convert to ObjectId
+        try:
+            obj_id = ObjectId(doc_id)
+            doc = documents_col.find_one({
+                '_id': obj_id,
+                'uploaded_by': session['username']
+            })
+        except (InvalidId, ValueError) as e:
+            print(f"Invalid ObjectId: {e}")
+            # If not a valid ObjectId, try to find by filename
+            doc = documents_col.find_one({
+                'filename': doc_id,
+                'uploaded_by': session['username']
+            })
+            if doc:
+                obj_id = doc['_id']
+        
+        if not doc:
+            return jsonify({'error': 'Document not found or you do not have permission to delete it'}), 404
+        
+        # Store file path and filename before deletion
+        file_path = doc.get('file_path')
+        filename = doc.get('filename')
+        
+        print(f"Deleting document: {filename} with ID: {obj_id}")
+        
+        # Delete from documents collection
+        result = documents_col.delete_one({
+            '_id': obj_id,
+            'uploaded_by': session['username']
+        })
+        
+        if result.deleted_count == 0:
+            return jsonify({'error': 'Failed to delete document'}), 500
+        
+        # Delete from knowledge repository
+        knowledge_result = knowledge_col.delete_many({
+            'document_id': obj_id,
+            'uploaded_by': session['username']
+        })
+        print(f"Deleted {knowledge_result.deleted_count} entries from knowledge repository")
+        
+        # Delete the physical file if it exists
+        if file_path and os.path.exists(file_path):
+            try:
+                os.remove(file_path)
+                print(f"Deleted file: {file_path}")
+            except Exception as e:
+                print(f"Warning: Could not delete file: {e}")
+                # Don't fail the request if file can't be deleted
+        
+        return jsonify({
+            'success': True,
+            'message': f'Document "{filename}" deleted successfully'
+        })
+        
+    except Exception as e:
+        print(f"Error deleting document: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/knowledge-stats')
 def knowledge_stats():
     if 'username' not in session:
@@ -478,7 +605,6 @@ def knowledge_stats():
         'top_keywords': sorted(keyword_counts.items(), key=lambda x: x[1], reverse=True)[:10]
     })
 
-# NEW ROUTE: Export Knowledge Report
 @app.route('/export-knowledge-pdf')
 def export_knowledge_pdf():
     if 'username' not in session:
@@ -496,11 +622,13 @@ def export_knowledge_pdf():
             .header { border-bottom: 2px solid #2b6cb0; padding-bottom: 10px; margin-bottom: 20px; }
             .title { font-size: 22pt; font-weight: bold; color: #1a365d; }
             .subtitle { font-size: 10pt; color: #4a5568; }
-            .doc-card { border: 1px solid #e2e8f0; padding: 15px; margin-bottom: 15px; }
+            .doc-card { border: 1px solid #e2e8f0; padding: 15px; margin-bottom: 15px; border-radius: 5px; }
             .doc-filename { font-size: 12pt; font-weight: bold; color: #2b6cb0; }
             .keywords { background: #f7fafc; padding: 8px; margin: 5px 0; }
             .keyword-tag { display: inline-block; background: #e2e8f0; padding: 2px 8px; margin: 2px; border-radius: 3px; font-size: 8pt; }
             .section { margin-top: 20px; border-left: 4px solid #2b6cb0; padding-left: 10px; }
+            .sections-list { background: #f7fafc; padding: 8px; margin: 5px 0; }
+            .sections-list li { list-style: none; padding: 3px 0; }
         </style>
     </head>
     <body>
@@ -516,6 +644,7 @@ def export_knowledge_pdf():
         <div class="doc-card">
             <div class="doc-filename">{{ doc.filename }}</div>
             <div><strong>Uploaded:</strong> {{ doc.upload_date }}</div>
+            <div><strong>Status:</strong> {{ doc.get('status', 'Processed') }}</div>
             
             {% set knowledge = doc.get('knowledge_entry', {}) %}
             
@@ -528,6 +657,20 @@ def export_knowledge_pdf():
                     {% endfor %}
                 </div>
                 {% endfor %}
+            </div>
+            
+            <div class="section">Document Sections</div>
+            <div class="sections-list">
+                {% set sections = doc.get('sections', []) %}
+                {% if sections %}
+                <ul>
+                    {% for section in sections %}
+                    <li>• {{ section }}</li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <span style="color: #718096;">No sections identified</span>
+                {% endif %}
             </div>
             
             <div class="section">Extracted Metadata</div>
@@ -910,6 +1053,148 @@ def export_pdf():
     response.headers['Content-Disposition'] = f'attachment; filename=VisionDesk_Compliance_Report_{datetime.date.today()}.pdf'
     return response
 
+
+# ==================== DELETE ROUTES FOR VISUAL RECORDS ====================
+# These MUST be before if __name__ == '__main__'
+
+@app.route('/delete-visual-record/<record_id>', methods=['POST'])
+def delete_visual_record(record_id):
+    if 'username' not in session:
+        return jsonify({'error': 'Please login first'}), 401
+    
+    from bson.objectid import ObjectId
+    from bson.errors import InvalidId
+    
+    try:
+        print(f"Attempting to delete visual record with ID: {record_id}")
+        
+        # Try to convert to ObjectId
+        try:
+            obj_id = ObjectId(record_id)
+        except (InvalidId, ValueError):
+            return jsonify({'error': 'Invalid record ID format'}), 400
+        
+        # Find the record first to get the file path
+        record = records_col.find_one({
+            '_id': obj_id,
+            'uploaded_by': session['username']
+        })
+        
+        if not record:
+            return jsonify({'error': 'Record not found or you do not have permission to delete it'}), 404
+        
+        # Get the processed file path
+        processed_url = record.get('processed_url', '')
+        if processed_url:
+            # Remove leading slash if present
+            if processed_url.startswith('/'):
+                processed_url = processed_url[1:]
+            # Try to delete the processed file
+            if os.path.exists(processed_url):
+                try:
+                    os.remove(processed_url)
+                    print(f"Deleted file: {processed_url}")
+                except Exception as e:
+                    print(f"Warning: Could not delete file: {e}")
+        
+        # Also try to delete the original uploaded file
+        original_file = record.get('file_name', '')
+        if original_file:
+            original_path = os.path.join(app.config['UPLOAD_FOLDER'], original_file)
+            if os.path.exists(original_path):
+                try:
+                    os.remove(original_path)
+                    print(f"Deleted original file: {original_path}")
+                except Exception as e:
+                    print(f"Warning: Could not delete original file: {e}")
+        
+        # Delete from database
+        result = records_col.delete_one({
+            '_id': obj_id,
+            'uploaded_by': session['username']
+        })
+        
+        if result.deleted_count == 0:
+            return jsonify({'error': 'Failed to delete record'}), 500
+        
+        return jsonify({
+            'success': True,
+            'message': f'Record "{record.get("file_name", "Unknown")}" deleted successfully'
+        })
+        
+    except Exception as e:
+        print(f"Error deleting visual record: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/delete-all-visual-records', methods=['POST'])
+def delete_all_visual_records():
+    if 'username' not in session:
+        return jsonify({'error': 'Please login first'}), 401
+    
+    try:
+        # Get all records for the user
+        records = list(records_col.find({'uploaded_by': session['username']}))
+        
+        if not records:
+            return jsonify({'error': 'No records found to delete'}), 404
+        
+        deleted_count = 0
+        failed_deletions = []
+        
+        for record in records:
+            try:
+                # Delete processed file
+                processed_url = record.get('processed_url', '')
+                if processed_url:
+                    if processed_url.startswith('/'):
+                        processed_url = processed_url[1:]
+                    if os.path.exists(processed_url):
+                        try:
+                            os.remove(processed_url)
+                        except Exception as e:
+                            failed_deletions.append(f"Could not delete {processed_url}: {e}")
+                
+                # Delete original file
+                original_file = record.get('file_name', '')
+                if original_file:
+                    original_path = os.path.join(app.config['UPLOAD_FOLDER'], original_file)
+                    if os.path.exists(original_path):
+                        try:
+                            os.remove(original_path)
+                        except Exception as e:
+                            failed_deletions.append(f"Could not delete {original_path}: {e}")
+                
+                # Delete from database
+                records_col.delete_one({
+                    '_id': record['_id'],
+                    'uploaded_by': session['username']
+                })
+                deleted_count += 1
+                
+            except Exception as e:
+                failed_deletions.append(f"Error deleting record {record.get('_id')}: {e}")
+        
+        message = f'Deleted {deleted_count} records successfully'
+        if failed_deletions:
+            message += f'. {len(failed_deletions)} files could not be deleted'
+        
+        return jsonify({
+            'success': True,
+            'message': message,
+            'deleted_count': deleted_count,
+            'failed_deletions': failed_deletions
+        })
+        
+    except Exception as e:
+        print(f"Error deleting all visual records: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+
+# ==================== MAIN ====================
 if __name__ == '__main__':
-    # debug=True stays on for error checking, but use_reloader=False blocks socket crashes
     app.run(host='127.0.0.1', port=5000, debug=True, use_reloader=False)

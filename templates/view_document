@@ -1,0 +1,47 @@
+from bson.objectid import ObjectId
+from bson.errors import InvalidId
+
+@app.route('/document/<doc_id>')
+def view_document(doc_id):
+    if 'username' not in session:
+        return redirect(url_for('login'))
+    
+    try:
+        # Try to convert to ObjectId first
+        try:
+            obj_id = ObjectId(doc_id)
+            doc = documents_col.find_one({
+                '_id': obj_id, 
+                'uploaded_by': session['username']
+            })
+        except (InvalidId, ValueError):
+            # If not a valid ObjectId, try searching by filename or string ID
+            doc = documents_col.find_one({
+                '$or': [
+                    {'filename': doc_id},
+                    {'_id': doc_id}
+                ],
+                'uploaded_by': session['username']
+            })
+        
+        if not doc:
+            # If still not found, check if there are any documents with this filename pattern
+            # This handles cases where the ID might be the filename without extension
+            clean_id = doc_id.replace('.pdf', '').replace('.docx', '').replace('.txt', '')
+            doc = documents_col.find_one({
+                'filename': {'$regex': f'^{clean_id}', '$options': 'i'},
+                'uploaded_by': session['username']
+            })
+        
+        if not doc:
+            return render_template('error.html', 
+                error=f"Document not found. Please go back to the documents list and try again."), 404
+        
+        return render_template('document_detail.html', 
+                             user=session['username'], 
+                             role=session['role'],
+                             document=doc)
+    except Exception as e:
+        print(f"Error viewing document: {e}")
+        return render_template('error.html', 
+            error=f"Error accessing document: {str(e)}"), 500

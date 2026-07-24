@@ -1,89 +1,241 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Knowledge Search - VisionDesk</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f5f7fa; }
-        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .search-box { margin: 20px 0; padding: 20px; background: #f7fafc; border-radius: 8px; }
-        .result-item { border: 1px solid #e2e8f0; padding: 15px; margin: 10px 0; border-radius: 4px; }
-        .keyword-tag { display: inline-block; background: #e2e8f0; padding: 2px 8px; margin: 2px; border-radius: 3px; font-size: 12px; }
-        .btn { background: #2b6cb0; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; }
-        .btn:hover { background: #1a365d; }
-        .nav a { margin-right: 15px; color: #2b6cb0; text-decoration: none; }
-        .snippet { background: #f7fafc; padding: 10px; border-radius: 4px; margin: 5px 0; font-style: italic; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f4f8; }
+        
+        .navbar {
+            background: #1a365d;
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+        .navbar-brand { font-size: 1.5rem; font-weight: bold; }
+        .navbar-brand span { color: #63b3ed; }
+        .navbar-links a {
+            color: #e2e8f0;
+            text-decoration: none;
+            margin-left: 2rem;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            transition: all 0.3s;
+        }
+        .navbar-links a:hover { background: #2b6cb0; color: white; }
+        .navbar-links .active { background: #2b6cb0; color: white; }
+        
+        .container { max-width: 1200px; margin: 2rem auto; padding: 0 2rem; }
+        
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+        .page-title { font-size: 2rem; font-weight: 700; color: #1a365d; }
+        .page-subtitle { color: #4a5568; font-size: 1rem; }
+        
+        .search-section {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+        .search-form {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        .search-input-group {
+            flex: 1;
+            min-width: 300px;
+        }
+        .search-input-group input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+        .search-input-group input:focus {
+            outline: none;
+            border-color: #2b6cb0;
+        }
+        .search-select {
+            padding: 0.75rem 1rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            background: white;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+        .search-btn {
+            padding: 0.75rem 2rem;
+            background: #2b6cb0;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .search-btn:hover { background: #1a365d; transform: translateY(-2px); }
+        
+        .results-summary {
+            padding: 1rem 0;
+            color: #4a5568;
+            font-weight: 500;
+        }
+        .results-summary strong { color: #1a365d; }
+        
+        .result-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-left: 4px solid #2b6cb0;
+            transition: all 0.3s;
+        }
+        .result-card:hover { transform: translateX(5px); }
+        .result-filename {
+            font-weight: 600;
+            color: #1a365d;
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+        }
+        .result-snippet {
+            color: #4a5568;
+            line-height: 1.6;
+            padding: 0.5rem;
+            background: #f7fafc;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            margin-bottom: 0.75rem;
+        }
+        .result-keywords {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+        .keyword-tag {
+            display: inline-block;
+            padding: 0.2rem 0.6rem;
+            background: #bee3f8;
+            color: #2a4365;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        .result-meta {
+            font-size: 0.875rem;
+            color: #718096;
+        }
+        
+        .no-results {
+            text-align: center;
+            padding: 3rem 2rem;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .no-results h3 { color: #4a5568; margin-bottom: 0.5rem; }
+        .no-results p { color: #718096; }
+        
+        @media (max-width: 768px) {
+            .navbar { flex-direction: column; gap: 1rem; text-align: center; }
+            .navbar-links a { margin: 0 0.5rem; }
+            .search-form { flex-direction: column; }
+            .search-input-group { min-width: auto; }
+            .page-header { flex-direction: column; gap: 1rem; text-align: center; }
+        }
     </style>
 </head>
 <body>
+    <nav class="navbar">
+        <div class="navbar-brand">Vision<span>Desk</span></div>
+        <div class="navbar-links">
+            <a href="{{ url_for('index') }}">Dashboard</a>
+            <a href="{{ url_for('upload_feed') }}">Visual Feed</a>
+            <a href="{{ url_for('upload_document') }}">Documents</a>
+            <a href="{{ url_for('search_knowledge') }}" class="active">Knowledge Search</a>
+            <a href="{{ url_for('logout') }}">Logout</a>
+        </div>
+    </nav>
+
     <div class="container">
-        <div class="header">
-            <h1>🔍 Knowledge Repository Search</h1>
+        <div class="page-header">
             <div>
-                <span>Welcome, {{ user }} ({{ role }})</span>
-                <a href="{{ url_for('index') }}" class="btn" style="margin-left: 10px;">Dashboard</a>
-                <a href="{{ url_for('logout') }}" class="btn" style="background: #e53e3e;">Logout</a>
+                <h1 class="page-title">🔍 Knowledge Search</h1>
+                <p class="page-subtitle">Search through your safety documents and knowledge repository</p>
+            </div>
+            <div>
+                <a href="{{ url_for('upload_document') }}" class="search-btn" style="background: #38a169; text-decoration: none; display: inline-block;">📤 Upload Document</a>
             </div>
         </div>
-        
-        <div class="nav">
-            <a href="{{ url_for('index') }}">Home</a>
-            <a href="{{ url_for('upload_feed') }}">Upload Media</a>
-            <a href="{{ url_for('upload_document') }}">📄 Documents</a>
-            <a href="{{ url_for('search_knowledge') }}">🔍 Search Knowledge</a>
-            <a href="{{ url_for('export_knowledge_pdf') }}">📊 Export Knowledge Report</a>
-        </div>
-        
-        <div class="search-box">
-            <h3>Search Documents</h3>
-            <form method="POST">
-                <div style="display: flex; gap: 10px; align-items: center;">
-                    <input type="text" name="query" placeholder="Enter search term..." 
-                           style="flex: 1; padding: 10px; border: 1px solid #cbd5e0; border-radius: 4px;" 
-                           value="{{ query or '' }}">
-                    <select name="search_type" style="padding: 10px; border: 1px solid #cbd5e0; border-radius: 4px;">
-                        <option value="full_text">Full Text</option>
-                        <option value="keyword">Safety Keywords</option>
-                    </select>
-                    <button type="submit" class="btn">Search</button>
+
+        <!-- Search Section -->
+        <div class="search-section">
+            <form class="search-form" method="POST" action="{{ url_for('search_knowledge') }}">
+                <div class="search-input-group">
+                    <input type="text" name="query" placeholder="Search safety documents, incidents, protocols..." value="{{ query if query else '' }}" required>
                 </div>
+                <select name="search_type" class="search-select">
+                    <option value="full_text" {% if search_type == 'full_text' %}selected{% endif %}>Full Text Search</option>
+                    <option value="keyword" {% if search_type == 'keyword' %}selected{% endif %}>Keyword Search</option>
+                </select>
+                <button type="submit" class="search-btn">🔎 Search</button>
             </form>
         </div>
+
+        <!-- Results -->
+        {% if query is defined %}
+        <div class="results-summary">
+            Found <strong>{{ result_count }}</strong> result{% if result_count != 1 %}s{% endif %} for "<strong>{{ query }}</strong>"
+        </div>
         
-        {% if results is defined %}
-            <h3>Search Results ({{ result_count }} found)</h3>
-            {% if results %}
-                {% for result in results %}
-                <div class="result-item">
-                    <h4>{{ result.filename }}</h4>
-                    {% if result.snippet %}
-                        <div class="snippet">{{ result.snippet }}</div>
-                    {% endif %}
-                    {% if result.safety_keywords %}
-                        <div>
-                            <strong>Safety Keywords:</strong><br>
-                            {% for category, keywords in result.safety_keywords.items() %}
-                                <div>
-                                    <strong>{{ category|title }}:</strong>
-                                    {% for kw in keywords %}
-                                    <span class="keyword-tag">{{ kw }}</span>
-                                    {% endfor %}
-                                </div>
-                            {% endfor %}
-                        </div>
-                    {% endif %}
-                    {% if result.metadata %}
-                        <div style="margin-top: 5px; color: #718096; font-size: 12px;">
-                            <strong>Metadata:</strong> 
-                            {% if result.metadata.dates %}
-                                Dates: {{ result.metadata.dates|join(', ') }}
-                            {% endif %}
-                        </div>
+        {% if results %}
+        <div>
+            {% for result in results %}
+            <div class="result-card">
+                <div class="result-filename">📄 {{ result.filename }}</div>
+                
+                {% if result.snippet %}
+                <div class="result-snippet">{{ result.snippet|safe }}</div>
+                {% endif %}
+                
+                <div class="result-keywords">
+                    {% for category, keywords in result.safety_keywords.items() %}
+                        {% for kw in keywords[:3] %}
+                        <span class="keyword-tag">{{ kw }}</span>
+                        {% endfor %}
+                    {% endfor %}
+                </div>
+                
+                <div class="result-meta">
+                    Uploaded: {{ result.upload_date.strftime('%Y-%m-%d %H:%M') if result.upload_date else 'N/A' }}
+                    {% if result.sections %}
+                    • Sections: {{ result.sections[:2]|join(', ') }}
                     {% endif %}
                 </div>
-                {% endfor %}
-            {% else %}
-                <p>No results found for "{{ query }}"</p>
-            {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="no-results">
+            <h3>📭 No results found</h3>
+            <p>Try adjusting your search terms or upload more documents to the knowledge base.</p>
+        </div>
+        {% endif %}
         {% endif %}
     </div>
 </body>

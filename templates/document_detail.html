@@ -1,53 +1,208 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document Details - VisionDesk</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f5f7fa; }
-        .container { max-width: 900px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .keyword-tag { display: inline-block; background: #e2e8f0; padding: 2px 8px; margin: 2px; border-radius: 3px; font-size: 12px; }
-        .btn { background: #2b6cb0; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; text-decoration: none; display: inline-block; }
-        .btn:hover { background: #1a365d; }
-        .section { margin: 20px 0; border-left: 4px solid #2b6cb0; padding-left: 15px; }
-        .content-preview { background: #f7fafc; padding: 15px; border-radius: 4px; max-height: 300px; overflow-y: auto; white-space: pre-wrap; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f4f8; }
+        
+        .navbar {
+            background: #1a365d;
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+        .navbar-brand { font-size: 1.5rem; font-weight: bold; }
+        .navbar-brand span { color: #63b3ed; }
+        .navbar-links a {
+            color: #e2e8f0;
+            text-decoration: none;
+            margin-left: 2rem;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            transition: all 0.3s;
+        }
+        .navbar-links a:hover { background: #2b6cb0; color: white; }
+        
+        .container { max-width: 1000px; margin: 2rem auto; padding: 0 2rem; }
+        
+        .back-link {
+            display: inline-block;
+            margin-bottom: 1.5rem;
+            color: #2b6cb0;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .back-link:hover { text-decoration: underline; }
+        
+        .doc-header {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+        .doc-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: #1a365d;
+            margin-bottom: 0.5rem;
+        }
+        .doc-meta-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid #e2e8f0;
+        }
+        .meta-item { color: #4a5568; }
+        .meta-item strong { color: #2d3748; display: block; font-size: 0.875rem; }
+        
+        .section-card {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 1.5rem;
+        }
+        .section-card h2 {
+            color: #1a365d;
+            font-size: 1.25rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        .keyword-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+        }
+        .keyword-item {
+            background: #bee3f8;
+            color: #2a4365;
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+        .metadata-list { list-style: none; }
+        .metadata-list li {
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #f0f4f8;
+            color: #4a5568;
+        }
+        .metadata-list li strong { color: #2d3748; }
+        .text-preview {
+            max-height: 400px;
+            overflow-y: auto;
+            background: #f7fafc;
+            padding: 1rem;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        
+        @media (max-width: 768px) {
+            .navbar { flex-direction: column; gap: 1rem; text-align: center; }
+            .navbar-links a { margin: 0 0.5rem; }
+            .doc-meta-grid { grid-template-columns: 1fr; }
+        }
     </style>
 </head>
 <body>
+    <nav class="navbar">
+        <div class="navbar-brand">Vision<span>Desk</span></div>
+        <div class="navbar-links">
+            <a href="{{ url_for('index') }}">Dashboard</a>
+            <a href="{{ url_for('upload_feed') }}">Visual Feed</a>
+            <a href="{{ url_for('upload_document') }}">Documents</a>
+            <a href="{{ url_for('search_knowledge') }}">Knowledge Search</a>
+            <a href="{{ url_for('logout') }}">Logout</a>
+        </div>
+    </nav>
+
     <div class="container">
-        <h1>📄 Document Details</h1>
-        <p><a href="{{ url_for('upload_document') }}" class="btn">← Back to Documents</a></p>
-        
-        <h2>{{ document.filename }}</h2>
-        <p><strong>Uploaded By:</strong> {{ document.uploaded_by }}</p>
-        <p><strong>Upload Date:</strong> {{ document.upload_date }}</p>
-        <p><strong>Status:</strong> {{ document.processing_status }}</p>
+        <a href="{{ url_for('upload_document') }}" class="back-link">← Back to Documents</a>
         
         {% set knowledge = document.get('knowledge_entry', {}) %}
         
-        <div class="section">
-            <h3>Safety Keywords</h3>
-            {% for category, keywords in knowledge.get('safety_keywords', {}).items() %}
-                <div>
-                    <strong>{{ category|title }}:</strong>
-                    {% for kw in keywords %}
-                    <span class="keyword-tag">{{ kw }}</span>
-                    {% endfor %}
+        <div class="doc-header">
+            <h1 class="doc-title">📄 {{ document.filename }}</h1>
+            <div class="doc-meta-grid">
+                <div class="meta-item">
+                    <strong>Upload Date</strong>
+                    {{ document.upload_date.strftime('%Y-%m-%d %H:%M:%S') if document.upload_date else 'N/A' }}
                 </div>
-            {% endfor %}
+                <div class="meta-item">
+                    <strong>Status</strong>
+                    <span style="color: #38a169;">{{ document.status }}</span>
+                </div>
+                <div class="meta-item">
+                    <strong>Document Hash</strong>
+                    <span style="font-family: monospace; font-size: 0.8rem;">{{ knowledge.get('document_hash', 'N/A')[:8] }}...</span>
+                </div>
+            </div>
         </div>
         
-        <div class="section">
-            <h3>Extracted Metadata</h3>
+        <!-- Safety Keywords -->
+        <div class="section-card">
+            <h2>🛡️ Safety Keywords Extracted</h2>
+            {% set keywords = knowledge.get('safety_keywords', {}) %}
+            {% if keywords %}
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem;">
+                {% for category, kw_list in keywords.items() %}
+                <div>
+                    <strong style="text-transform: capitalize; color: #2d3748;">{{ category }}</strong>
+                    <div class="keyword-grid" style="margin-top: 0.5rem;">
+                        {% for kw in kw_list %}
+                        <span class="keyword-item">{{ kw }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p style="color: #718096;">No safety keywords extracted from this document.</p>
+            {% endif %}
+        </div>
+        
+        <!-- Metadata -->
+        <div class="section-card">
+            <h2>📊 Extracted Metadata</h2>
             {% set metadata = knowledge.get('metadata', {}) %}
-            <div><strong>Dates Found:</strong> {{ metadata.get('dates', [])|join(', ') or 'None' }}</div>
-            <div><strong>Numbers Found:</strong> {{ metadata.get('numbers', [])|join(', ') or 'None' }}</div>
-            <div><strong>Key Phrases:</strong> {{ metadata.get('important_phrases', [])|join(', ') or 'None' }}</div>
+            <ul class="metadata-list">
+                {% if metadata.get('dates') %}
+                <li><strong>Dates:</strong> {{ metadata.dates|join(', ') }}</li>
+                {% endif %}
+                {% if metadata.get('numbers') %}
+                <li><strong>Numbers:</strong> {{ metadata.numbers[:10]|join(', ') }}</li>
+                {% endif %}
+                {% if metadata.get('important_phrases') %}
+                <li><strong>Key Phrases:</strong> {{ metadata.important_phrases[:5]|join(', ') }}</li>
+                {% endif %}
+                {% if metadata.get('sections') %}
+                <li><strong>Sections:</strong> {{ metadata.sections|join(', ') }}</li>
+                {% endif %}
+            </ul>
         </div>
         
-        <div class="section">
-            <h3>Document Content Preview</h3>
-            <div class="content-preview">
-                {{ knowledge.get('full_text', '')[:1000] }}...
+        <!-- Document Preview -->
+        <div class="section-card">
+            <h2>📝 Document Preview</h2>
+            <div class="text-preview">
+                {{ knowledge.get('full_text', 'No content available')[:2000] }}
+                {% if knowledge.get('full_text', '').length > 2000 %}
+                <p style="color: #718096; margin-top: 0.5rem;">... (truncated, {{ knowledge.get('full_text', '').length }} characters total)</p>
+                {% endif %}
             </div>
         </div>
     </div>

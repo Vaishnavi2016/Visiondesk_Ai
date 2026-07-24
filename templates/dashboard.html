@@ -221,6 +221,11 @@
             font-size: 22px;
             font-weight: 600;
             margin-bottom: 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
         }
 
         canvas {
@@ -234,11 +239,18 @@
             margin-bottom: 18px;
             transition: .35s;
             border: 1px solid rgba(255, 255, 255, .05);
+            position: relative;
         }
 
         .record-card:hover {
             transform: translateY(-5px);
             box-shadow: 0 15px 35px rgba(0, 0, 0, .35);
+        }
+        
+        .record-card.deleting {
+            opacity: 0;
+            transform: scale(0.8);
+            transition: all 0.3s ease;
         }
 
         .preview {
@@ -290,6 +302,7 @@
             justify-content: center;
             align-items: center;
             background: conic-gradient(#06b6d4 {{ compliance }}%, #1e293b 0);
+            position: relative;
         }
 
         .circle::before {
@@ -357,6 +370,149 @@
 
         .action-btn.red:hover {
             background: #b91c1c;
+        }
+
+        /* Delete button for records */
+        .record-delete-btn {
+            background: #dc2626;
+            color: white;
+            border: none;
+            padding: 0.3rem 0.7rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.7rem;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .record-delete-btn:hover {
+            background: #b91c1c;
+            transform: scale(1.05);
+        }
+        
+        .record-delete-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .record-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        /* Delete Confirmation Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-overlay.active {
+            display: flex;
+        }
+        .modal-box {
+            background: #1a2332;
+            padding: 2rem;
+            border-radius: 12px;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            animation: slideDown 0.3s ease;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .modal-box h3 {
+            color: #fff;
+            margin-bottom: 0.5rem;
+            font-size: 1.25rem;
+        }
+        .modal-box p {
+            color: #94a3b8;
+            margin-bottom: 1.5rem;
+            line-height: 1.5;
+        }
+        .modal-box p strong {
+            color: #fff;
+        }
+        .modal-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+        }
+        .modal-btn {
+            padding: 0.6rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .modal-btn.cancel {
+            background: #334155;
+            color: #94a3b8;
+        }
+        .modal-btn.cancel:hover {
+            background: #475569;
+        }
+        .modal-btn.confirm {
+            background: #dc2626;
+            color: white;
+        }
+        .modal-btn.confirm:hover {
+            background: #b91c1c;
+        }
+        .modal-btn.confirm:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Toast Notification */
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 1rem 1.5rem;
+            border-radius: 10px;
+            color: white;
+            font-weight: 500;
+            z-index: 9999;
+            transform: translateX(120%);
+            transition: transform 0.5s ease;
+            max-width: 400px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        .toast.show {
+            transform: translateX(0);
+        }
+        .toast.success {
+            background: #16a34a;
+        }
+        .toast.error {
+            background: #dc2626;
+        }
+        .toast.info {
+            background: #2563eb;
         }
 
         /* Scrollbar */
@@ -445,6 +601,11 @@
             }
             .preview {
                 height: 180px;
+            }
+            .chart-title {
+                flex-direction: column;
+                gap: 10px;
+                align-items: flex-start;
             }
         }
 
@@ -611,11 +772,15 @@
             <div class="col-lg-8">
                 <div class="chart-card">
                     <div class="chart-title">
-                        <i class="fa-solid fa-clock-rotate-left"></i>
-                        Recent Detection History
+                        <span><i class="fa-solid fa-clock-rotate-left"></i> Recent Detection History</span>
+                        {% if data %}
+                        <button class="record-delete-btn" onclick="confirmDeleteAll()" style="background: #dc2626; padding: 0.5rem 1rem;">
+                            <i class="fa-solid fa-trash-can"></i> Delete All
+                        </button>
+                        {% endif %}
                     </div>
                     {% for item in data %}
-                    <div class="record-card">
+                    <div class="record-card" id="record-{{ item._id|string }}">
                         <div class="row align-items-center">
                             <div class="col-md-3">
                                 {% if item.file_name.lower().endswith(('.mp4','.avi','.mov')) %}
@@ -663,6 +828,11 @@
                                 {% else %}
                                 <span class="status danger">VIOLATION</span>
                                 {% endif %}
+                                <div class="record-actions">
+                                    <button class="record-delete-btn" onclick="confirmDeleteRecord('{{ item._id|string }}', '{{ item.file_name }}')">
+                                        <i class="fa-solid fa-trash-can"></i> Delete
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -716,6 +886,23 @@
             <span>© 2026 VisionDesk AI. All Rights Reserved.</span>
         </div>
     </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal-overlay" id="deleteModal">
+        <div class="modal-box">
+            <h3>⚠️ Confirm Delete</h3>
+            <p id="deleteMessage">Are you sure you want to delete <strong id="deleteFileName"></strong>? This action cannot be undone.</p>
+            <div class="modal-actions">
+                <button class="modal-btn cancel" onclick="closeDeleteModal()">Cancel</button>
+                <button class="modal-btn confirm" id="confirmDeleteBtn" onclick="executeDelete()">
+                    <i class="fa-solid fa-trash-can"></i> Delete Permanently
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast"></div>
 
     <!-- Dashboard Charts -->
     <script>
@@ -816,6 +1003,138 @@
                 console.log('Could not fetch document stats:', err);
                 document.getElementById('docCount').textContent = '0';
             });
+
+        // ==================== DELETE FUNCTIONS ====================
+        
+        let deleteTargetId = null;
+        let deleteTargetName = '';
+        let deleteType = 'record'; // 'record' or 'all'
+
+        function confirmDeleteRecord(recordId, fileName) {
+            deleteTargetId = recordId;
+            deleteTargetName = fileName;
+            deleteType = 'record';
+            document.getElementById('deleteFileName').textContent = fileName;
+            document.getElementById('deleteMessage').innerHTML = 'Are you sure you want to delete <strong>' + fileName + '</strong>? This action cannot be undone.';
+            document.getElementById('deleteModal').classList.add('active');
+        }
+
+        function confirmDeleteAll() {
+            deleteTargetId = 'all';
+            deleteTargetName = 'all records';
+            deleteType = 'all';
+            document.getElementById('deleteFileName').textContent = 'ALL detection records';
+            document.getElementById('deleteMessage').innerHTML = 'Are you sure you want to delete <strong>ALL detection records</strong>? This action cannot be undone.';
+            document.getElementById('deleteModal').classList.add('active');
+        }
+
+        function closeDeleteModal() {
+            document.getElementById('deleteModal').classList.remove('active');
+            deleteTargetId = null;
+            deleteTargetName = '';
+            document.getElementById('confirmDeleteBtn').disabled = false;
+            document.getElementById('confirmDeleteBtn').innerHTML = '<i class="fa-solid fa-trash-can"></i> Delete Permanently';
+        }
+
+        function executeDelete() {
+            if (!deleteTargetId) return;
+            
+            const btn = document.getElementById('confirmDeleteBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Deleting...';
+            
+            let url = '/delete-visual-record/' + deleteTargetId;
+            if (deleteType === 'all') {
+                url = '/delete-all-visual-records';
+            }
+            
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => {
+                // Check if response is OK
+                if (!response.ok) {
+                    return response.text().then(text => {
+                        throw new Error(text || 'Server error occurred');
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    showToast('✅ ' + data.message, 'success');
+                    
+                    if (deleteType === 'all') {
+                        // Remove all record cards
+                        document.querySelectorAll('.record-card').forEach(card => {
+                            card.classList.add('deleting');
+                        });
+                        setTimeout(() => {
+                            location.reload();
+                        }, 500);
+                    } else {
+                        // Remove the specific card
+                        const card = document.getElementById(`record-${deleteTargetId}`);
+                        if (card) {
+                            card.classList.add('deleting');
+                            setTimeout(() => {
+                                card.remove();
+                                // Update counts if needed
+                                const remaining = document.querySelectorAll('.record-card');
+                                if (remaining.length === 0) {
+                                    location.reload();
+                                }
+                            }, 400);
+                        }
+                    }
+                    closeDeleteModal();
+                } else {
+                    showToast('❌ Error: ' + data.error, 'error');
+                    closeDeleteModal();
+                }
+            })
+            .catch(error => {
+                console.error('Delete error:', error);
+                // Check if it's an HTML response (likely a redirect to login)
+                if (error.message.includes('<!doctype') || error.message.includes('<!DOCTYPE')) {
+                    showToast('❌ Session expired. Please refresh and login again.', 'error');
+                    setTimeout(() => {
+                        window.location.href = '/login';
+                    }, 2000);
+                } else {
+                    showToast('❌ Error: ' + error.message, 'error');
+                }
+                closeDeleteModal();
+            });
+        }
+
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = 'toast ' + type;
+            toast.classList.add('show');
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 4000);
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('deleteModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeDeleteModal();
+            }
+        });
+
+        // Close modal with Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeDeleteModal();
+            }
+        });
     </script>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

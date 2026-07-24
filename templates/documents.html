@@ -1,104 +1,557 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document Intelligence - VisionDesk</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
     <style>
-        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f5f7fa; }
-        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .upload-section { background: #f7fafc; border: 2px dashed #cbd5e0; padding: 30px; text-align: center; margin: 20px 0; border-radius: 8px; }
-        .doc-list { margin-top: 20px; }
-        .doc-item { border: 1px solid #e2e8f0; padding: 15px; margin: 10px 0; border-radius: 4px; }
-        .doc-item:hover { background: #f7fafc; }
-        .keyword-tag { display: inline-block; background: #e2e8f0; padding: 2px 8px; margin: 2px; border-radius: 3px; font-size: 12px; }
-        .btn { background: #2b6cb0; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; }
-        .btn:hover { background: #1a365d; }
-        .nav { margin-bottom: 20px; }
-        .nav a { margin-right: 15px; color: #2b6cb0; text-decoration: none; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f4f8; }
+        
+        .navbar {
+            background: #1a365d;
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+        .navbar-brand { font-size: 1.5rem; font-weight: bold; }
+        .navbar-brand span { color: #63b3ed; }
+        .navbar-links a {
+            color: #e2e8f0;
+            text-decoration: none;
+            margin-left: 2rem;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            transition: all 0.3s;
+        }
+        .navbar-links a:hover {
+            background: #2b6cb0;
+            color: white;
+        }
+        .navbar-links .active { background: #2b6cb0; color: white; }
+        
+        .container { max-width: 1400px; margin: 2rem auto; padding: 0 2rem; }
+        
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+        .page-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #1a365d;
+        }
+        .page-subtitle {
+            color: #4a5568;
+            font-size: 1rem;
+        }
+        
+        .upload-section {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+            border: 2px dashed #cbd5e0;
+            text-align: center;
+        }
+        .upload-section h3 { color: #2d3748; margin-bottom: 0.5rem; }
+        .upload-section p { color: #718096; margin-bottom: 1rem; }
+        .file-input-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+        .file-input-wrapper input[type="file"] {
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+        .file-input-label {
+            display: inline-block;
+            padding: 0.75rem 2rem;
+            background: #2b6cb0;
+            color: white;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .file-input-label:hover { background: #1a365d; transform: translateY(-2px); }
+        .supported-formats { margin-top: 1rem; color: #718096; font-size: 0.875rem; }
+        
+        .documents-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .document-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: all 0.3s;
+            border-left: 4px solid #2b6cb0;
+            position: relative;
+        }
+        .document-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 15px rgba(0,0,0,0.15);
+        }
+        .document-card.deleting {
+            opacity: 0;
+            transform: scale(0.8);
+            transition: all 0.3s ease;
+        }
+        .doc-filename {
+            font-weight: 600;
+            color: #1a365d;
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+            padding-right: 40px;
+        }
+        .doc-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            font-size: 0.875rem;
+            color: #718096;
+        }
+        .doc-status {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .doc-status.completed { background: #c6f6d5; color: #22543d; }
+        .doc-status.analyzing { background: #fefcbf; color: #975a16; }
+        .doc-status.processed { background: #bee3f8; color: #2a4365; }
+        
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: #e2e8f0;
+            border-radius: 3px;
+            margin: 0.5rem 0;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: #2b6cb0;
+            border-radius: 3px;
+            transition: width 0.3s ease;
+        }
+        .doc-preview {
+            margin-top: 0.75rem;
+            padding: 0.75rem;
+            background: #f7fafc;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            color: #4a5568;
+            border-left: 3px solid #cbd5e0;
+        }
+        .doc-preview strong { color: #2d3748; }
+        
+        .doc-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 0.75rem;
+            gap: 0.5rem;
+        }
+        .view-link {
+            color: #2b6cb0;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+        .view-link:hover { text-decoration: underline; }
+        
+        .delete-btn {
+            background: #e53e3e;
+            color: white;
+            border: none;
+            padding: 0.4rem 0.8rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .delete-btn:hover {
+            background: #c53030;
+            transform: scale(1.05);
+        }
+        .delete-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .empty-state h3 { color: #4a5568; margin-bottom: 0.5rem; }
+        .empty-state p { color: #718096; }
+        
+        /* Delete Confirmation Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-overlay.active {
+            display: flex;
+        }
+        .modal-box {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            animation: slideDown 0.3s ease;
+        }
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .modal-box h3 {
+            color: #1a365d;
+            margin-bottom: 0.5rem;
+            font-size: 1.25rem;
+        }
+        .modal-box p {
+            color: #4a5568;
+            margin-bottom: 1.5rem;
+            line-height: 1.5;
+        }
+        .modal-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+        }
+        .modal-btn {
+            padding: 0.6rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .modal-btn.cancel {
+            background: #e2e8f0;
+            color: #4a5568;
+        }
+        .modal-btn.cancel:hover {
+            background: #cbd5e0;
+        }
+        .modal-btn.confirm {
+            background: #e53e3e;
+            color: white;
+        }
+        .modal-btn.confirm:hover {
+            background: #c53030;
+        }
+        .modal-btn.confirm:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        /* Toast Notification */
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 1rem 1.5rem;
+            border-radius: 10px;
+            color: white;
+            font-weight: 500;
+            z-index: 9999;
+            transform: translateX(120%);
+            transition: transform 0.5s ease;
+            max-width: 400px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .toast.show {
+            transform: translateX(0);
+        }
+        .toast.success {
+            background: #38a169;
+        }
+        .toast.error {
+            background: #e53e3e;
+        }
+        .toast.info {
+            background: #2b6cb0;
+        }
+        
+        @media (max-width: 768px) {
+            .documents-grid { grid-template-columns: 1fr; }
+            .navbar { flex-direction: column; gap: 1rem; text-align: center; }
+            .navbar-links a { margin: 0 0.5rem; }
+            .page-header { flex-direction: column; gap: 1rem; text-align: center; }
+        }
     </style>
 </head>
 <body>
+    <nav class="navbar">
+        <div class="navbar-brand">Vision<span>Desk</span></div>
+        <div class="navbar-links">
+            <a href="{{ url_for('index') }}">Dashboard</a>
+            <a href="{{ url_for('upload_feed') }}">Visual Feed</a>
+            <a href="{{ url_for('upload_document') }}" class="active">Documents</a>
+            <a href="{{ url_for('search_knowledge') }}">Knowledge Search</a>
+            <a href="{{ url_for('logout') }}">Logout</a>
+        </div>
+    </nav>
+
     <div class="container">
-        <div class="header">
-            <h1>📄 Document Intelligence</h1>
+        <div class="page-header">
             <div>
-                <span>Welcome, {{ user }} ({{ role }})</span>
-                <a href="{{ url_for('index') }}" class="btn" style="margin-left: 10px;">Dashboard</a>
-                <a href="{{ url_for('logout') }}" class="btn" style="background: #e53e3e;">Logout</a>
+                <h1 class="page-title">📄 Document Intelligence</h1>
+                <p class="page-subtitle">Automated processing of safety manuals and inspection reports</p>
+            </div>
+            <div style="display: flex; gap: 1rem;">
+                <a href="{{ url_for('search_knowledge') }}" class="file-input-label" style="background: #38a169;">🔍 Search KB</a>
+                <a href="{{ url_for('export_knowledge_pdf') }}" class="file-input-label" style="background: #805ad5;">📊 Export Report</a>
             </div>
         </div>
-        
-        <div class="nav">
-            <a href="{{ url_for('index') }}">Home</a>
-            <a href="{{ url_for('upload_feed') }}">Upload Media</a>
-            <a href="{{ url_for('upload_document') }}">📄 Documents</a>
-            <a href="{{ url_for('search_knowledge') }}">🔍 Search Knowledge</a>
-            <a href="{{ url_for('export_knowledge_pdf') }}">📊 Export Knowledge Report</a>
+
+        <!-- Upload Section -->
+        <div class="upload-section" id="uploadSection">
+            <h3>📤 Upload Safety Document</h3>
+            <p>Upload inspection reports, safety manuals, incident reports, and compliance documents</p>
+            <div class="file-input-wrapper">
+                <input type="file" id="documentUpload" accept=".pdf,.docx,.txt,.html" multiple>
+                <label for="documentUpload" class="file-input-label">Choose Documents</label>
+            </div>
+            <div class="supported-formats">Supported: PDF, DOCX, TXT, HTML • Max 50MB</div>
+            <div id="uploadStatus" style="margin-top: 1rem; display: none;"></div>
         </div>
+
+        <!-- Documents Grid -->
+        <h2 style="margin-bottom: 1.5rem; color: #2d3748;">📚 Uploaded Documents</h2>
         
-        <div class="upload-section">
-            <h2>Upload Document</h2>
-            <p>Supported formats: PDF, DOCX, TXT, HTML</p>
-            <form id="documentUploadForm" enctype="multipart/form-data">
-                <input type="file" name="document" accept=".pdf,.docx,.txt,.html,.htm" required>
-                <button type="submit" class="btn">Process Document</button>
-            </form>
-            <div id="uploadStatus" style="margin-top: 10px;"></div>
-        </div>
-        
-        <h2>Processed Documents ({{ documents|length }})</h2>
-        <div class="doc-list">
-            {% if documents %}
-                {% for doc in documents %}
-                <div class="doc-item">
-                    <h3>{{ doc.filename }}</h3>
-                    <p><strong>Uploaded:</strong> {{ doc.upload_date }}</p>
-                    <div>
-                        <strong>Safety Keywords:</strong><br>
-                        {% set knowledge = doc.get('knowledge_entry', {}) %}
-                        {% for category, keywords in knowledge.get('safety_keywords', {}).items() %}
-                            <div>
-                                <strong>{{ category|title }}:</strong>
-                                {% for kw in keywords %}
-                                <span class="keyword-tag">{{ kw }}</span>
-                                {% endfor %}
-                            </div>
-                        {% endfor %}
-                    </div>
-                    <div style="margin-top: 10px;">
-                        <a href="{{ url_for('view_document', doc_id=doc._id) }}" class="btn" style="font-size: 12px;">View Details</a>
-                    </div>
+        {% if documents %}
+        <div class="documents-grid">
+            {% for doc in documents %}
+            <div class="document-card" id="doc-{{ doc._id|string }}">
+                <div class="doc-filename">{{ doc.filename }}</div>
+                <div class="doc-meta">
+                    <span>{{ doc.upload_date.strftime('%Y-%m-%d %H:%M') if doc.upload_date else 'N/A' }}</span>
+                    <span>ID: {{ doc._id|string|truncate(12, True, '...') }}</span>
+                    <span class="doc-status {% if doc.status == 'Processed' or doc.status == 'Completed' %}completed{% elif doc.status == 'Analyzing' %}analyzing{% else %}processed{% endif %}">
+                        {{ doc.status }}
+                    </span>
                 </div>
-                {% endfor %}
-            {% else %}
-                <p>No documents processed yet. Upload your first document above!</p>
-            {% endif %}
+                {% if doc.progress and doc.progress < 100 %}
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: {{ doc.progress }}%;"></div>
+                </div>
+                <div style="font-size: 0.75rem; color: #718096;">{{ doc.progress }}% complete</div>
+                {% endif %}
+                
+                {% set knowledge = doc.get('knowledge_entry', {}) %}
+                {% set sections = doc.get('sections', []) %}
+                {% if sections %}
+                <div class="doc-preview">
+                    <strong>Sections:</strong> {{ sections[:3]|join(', ') }}{% if sections|length > 3 %}...{% endif %}
+                </div>
+                {% endif %}
+                
+                <div class="doc-actions">
+                    <a href="{{ url_for('view_document', doc_id=doc._id|string) }}" class="view-link">View Details →</a>
+                    <button class="delete-btn" onclick="confirmDelete('{{ doc._id|string }}', '{{ doc.filename }}')">
+                        <i class="fas fa-trash-alt"></i> Delete
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <h3>No Documents Uploaded Yet</h3>
+            <p>Upload safety documents to build your knowledge repository.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal-overlay" id="deleteModal">
+        <div class="modal-box">
+            <h3>⚠️ Confirm Delete</h3>
+            <p>Are you sure you want to delete <strong id="deleteFileName"></strong>? This action cannot be undone.</p>
+            <div class="modal-actions">
+                <button class="modal-btn cancel" onclick="closeDeleteModal()">Cancel</button>
+                <button class="modal-btn confirm" id="confirmDeleteBtn" onclick="executeDelete()">
+                    <i class="fas fa-trash-alt"></i> Delete Permanently
+                </button>
+            </div>
         </div>
     </div>
-    
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast"></div>
+
     <script>
-        document.getElementById('documentUploadForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            const formData = new FormData(this);
-            const statusDiv = document.getElementById('uploadStatus');
-            statusDiv.innerHTML = 'Processing document...';
+        let deleteTargetId = null;
+        let deleteTargetName = '';
+
+        function confirmDelete(docId, fileName) {
+            deleteTargetId = docId;
+            deleteTargetName = fileName;
+            document.getElementById('deleteFileName').textContent = fileName;
+            document.getElementById('deleteModal').classList.add('active');
+        }
+
+        function closeDeleteModal() {
+            document.getElementById('deleteModal').classList.remove('active');
+            deleteTargetId = null;
+            deleteTargetName = '';
+            document.getElementById('confirmDeleteBtn').disabled = false;
+            document.getElementById('confirmDeleteBtn').innerHTML = '<i class="fas fa-trash-alt"></i> Delete Permanently';
+        }
+
+        function executeDelete() {
+            if (!deleteTargetId) return;
             
-            try {
-                const response = await fetch('/upload-document', {
-                    method: 'POST',
-                    body: formData
-                });
-                const result = await response.json();
-                
-                if (result.success) {
-                    statusDiv.innerHTML = `<div style="color: green;">✓ ${result.message}</div>`;
-                    setTimeout(() => location.reload(), 2000);
-                } else {
-                    statusDiv.innerHTML = `<div style="color: red;">✗ ${result.error}</div>`;
+            const btn = document.getElementById('confirmDeleteBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
+            
+            fetch(`/delete-document/${deleteTargetId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
                 }
-            } catch (error) {
-                statusDiv.innerHTML = `<div style="color: red;">✗ Upload failed: ${error.message}</div>`;
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('✅ ' + data.message, 'success');
+                    // Remove the card from the grid
+                    const card = document.getElementById(`doc-${deleteTargetId}`);
+                    if (card) {
+                        card.classList.add('deleting');
+                        setTimeout(() => {
+                            card.remove();
+                            // Check if no documents left
+                            const remaining = document.querySelectorAll('.document-card');
+                            if (remaining.length === 0) {
+                                location.reload();
+                            }
+                        }, 400);
+                    }
+                    closeDeleteModal();
+                } else {
+                    showToast('❌ Error: ' + data.error, 'error');
+                    closeDeleteModal();
+                }
+            })
+            .catch(error => {
+                showToast('❌ Error: ' + error.message, 'error');
+                closeDeleteModal();
+            });
+        }
+
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = 'toast ' + type;
+            toast.classList.add('show');
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 4000);
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('deleteModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeDeleteModal();
             }
+        });
+
+        // Close modal with Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeDeleteModal();
+            }
+        });
+
+        // Document upload handling
+        document.getElementById('documentUpload').addEventListener('change', function(e) {
+            const files = this.files;
+            const statusDiv = document.getElementById('uploadStatus');
+            
+            if (files.length === 0) {
+                statusDiv.style.display = 'none';
+                return;
+            }
+            
+            statusDiv.style.display = 'block';
+            statusDiv.innerHTML = '<p style="color: #2b6cb0;">⏳ Processing ' + files.length + ' document(s)...</p>';
+            
+            const formData = new FormData();
+            for (let i = 0; i < files.length; i++) {
+                formData.append('document', files[i]);
+            }
+            
+            fetch('{{ url_for("upload_document") }}', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    statusDiv.innerHTML = '<p style="color: #38a169;">✅ ' + data.message + ' - ' + data.filename + '</p>';
+                    showToast('✅ Document uploaded successfully: ' + data.filename, 'success');
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    statusDiv.innerHTML = '<p style="color: #e53e3e;">❌ Error: ' + data.error + '</p>';
+                    showToast('❌ Error: ' + data.error, 'error');
+                }
+            })
+            .catch(error => {
+                statusDiv.innerHTML = '<p style="color: #e53e3e;">❌ Upload failed: ' + error.message + '</p>';
+                showToast('❌ Upload failed: ' + error.message, 'error');
+            });
+            
+            this.value = '';
         });
     </script>
 </body>
