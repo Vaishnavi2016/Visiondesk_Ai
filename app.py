@@ -1,3 +1,5 @@
+# app.py - Complete Working Version with RAG & Agent Integration
+
 import os
 from flask import Flask, render_template, request, redirect, url_for, session, render_template_string, make_response, jsonify
 from pymongo import MongoClient
@@ -14,6 +16,49 @@ import re
 from bs4 import BeautifulSoup
 import json
 from werkzeug.utils import secure_filename
+import pathlib
+
+# ============================================
+# IMPORT RAG & AGENT MODULES
+# ============================================
+
+# Try to import RAG system
+try:
+    from rag_system import rag_system
+    print("✅ RAG System loaded successfully")
+except ImportError as e:
+    print(f"⚠️ RAG System not found: {e}")
+    # Create fallback
+    class DummyRAG:
+        def get_document_stats(self): 
+            return {'total_chunks': 0, 'documents': 0, 'total_incidents': 0, 'active_incidents': 0}
+        def get_context(self, q, k=5): 
+            return "No RAG system available. Please install dependencies."
+        def search(self, q, k=5): 
+            return []
+        def add_document(self, text, metadata): 
+            return []
+    rag_system = DummyRAG()
+
+# Try to import Agent system
+try:
+    from agent_workflows import visiondesk_agent
+    print("✅ Agent System loaded successfully")
+except ImportError as e:
+    print(f"⚠️ Agent System not found: {e}")
+    class DummyAgent:
+        def process_query(self, q, u):
+            return {
+                'response': f"I'm a basic assistant. Your query: '{q}'\n\nPlease install required dependencies:\npip install scikit-learn pymongo flask",
+                'query': q,
+                'action': 'fallback',
+                'tool_results': [{'type': 'fallback', 'status': 'error'}]
+            }
+    visiondesk_agent = DummyAgent()
+
+# ============================================
+# FLASK APP INITIALIZATION
+# ============================================
 
 app = Flask(__name__)
 app.secret_key = 'system_deployment_operational_matrix_secret_key_2026'
@@ -27,7 +72,10 @@ os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 os.makedirs(app.config['RESULT_FOLDER'], exist_ok=True)
 os.makedirs(app.config['DOCUMENT_FOLDER'], exist_ok=True)
 
-# Establish connection to MongoDB
+# ============================================
+# MONGODB CONNECTION
+# ============================================
+
 client = MongoClient('mongodb://localhost:27017/')
 db = client['visiondesk_db']
 users_col = db['users']
@@ -35,13 +83,53 @@ records_col = db['visual_records']
 documents_col = db['documents']
 knowledge_col = db['knowledge_repository']
 
-# Ingest custom YOLOv8 model brain using explicit absolute path
-import pathlib
+# Create collections if they don't exist
+def setup_database():
+    """Ensure all required collections and indexes exist"""
+    collections = ['users', 'visual_records', 'documents', 
+                   'knowledge_repository', 'rag_embeddings', 'incidents']
+    
+    for col_name in collections:
+        if col_name not in db.list_collection_names():
+            db.create_collection(col_name)
+            print(f"Created collection: {col_name}")
+    
+    # Create indexes
+    users_col.create_index('username', unique=True)
+    records_col.create_index('uploaded_by')
+    records_col.create_index('upload_date')
+    records_col.create_index('status')
+    documents_col.create_index('uploaded_by')
+    documents_col.create_index('upload_date')
+    documents_col.create_index('filename')
+    knowledge_col.create_index('filename')
+    
+    if 'incidents' in db.list_collection_names():
+        db['incidents'].create_index('timestamp')
+        db['incidents'].create_index('status')
+        db['incidents'].create_index('zone')
+        db['incidents'].create_index('user')
+
+# Run database setup
+setup_database()
+
+# ============================================
+# YOLO MODEL LOADING
+# ============================================
+
 project_root = pathlib.Path(__file__).parent.resolve()
 model_path = os.path.join(project_root, 'ppe_yolov8.pt')
-model = YOLO(model_path)
+try:
+    model = YOLO(model_path)
+    print("✅ YOLO model loaded successfully")
+except Exception as e:
+    print(f"⚠️ Could not load YOLO model: {e}")
+    model = None
 
-# Seed Database with default root admin if empty
+# ============================================
+# SEED ADMIN USER
+# ============================================
+
 if users_col.count_documents({'username': 'admin'}) == 0:
     passwd_bytes = 'safety2026'.encode('utf-8')
     salt_hash = bcrypt.gensalt()
@@ -51,8 +139,11 @@ if users_col.count_documents({'username': 'admin'}) == 0:
         'password_hash': hashed_value.decode('utf-8'),
         'role': 'Admin'
     })
+    print("✅ Admin user created")
 
-# ------------------- DOCUMENT PROCESSING FUNCTIONS -------------------
+# ============================================
+# DOCUMENT PROCESSING FUNCTIONS
+# ============================================
 
 def extract_text_from_pdf(file_path):
     """Extract text from PDF files"""
@@ -118,7 +209,6 @@ def extract_metadata(text):
     """Extract document metadata like dates, numbers, etc."""
     metadata = {}
     
-    # Extract dates
     date_patterns = [
         r'\b\d{4}-\d{2}-\d{2}\b',
         r'\b\d{2}/\d{2}/\d{4}\b',
@@ -131,15 +221,12 @@ def extract_metadata(text):
         dates.extend(re.findall(pattern, text))
     metadata['dates'] = list(set(dates))
     
-    # Extract numbers (potential quantities, counts)
     numbers = re.findall(r'\b\d+\b', text)
-    metadata['numbers'] = numbers[:20]  # Limit to first 20 numbers
+    metadata['numbers'] = numbers[:20]
     
-    # Extract capitalized phrases (potential document titles or important sections)
     capitalized = re.findall(r'\b[A-Z][A-Z\s]{2,}\b', text)
     metadata['important_phrases'] = list(set(capitalized))[:10]
     
-    # Extract section headers (common in safety documents)
     section_patterns = [
         r'(?i)section\s+\d+\.?\d*',
         r'(?i)chapter\s+\d+',
@@ -156,18 +243,13 @@ def extract_metadata(text):
 
 def generate_searchable_content(text, filename):
     """Generate searchable content with metadata for knowledge repository"""
-    # Extract key information
     safety_keywords = extract_safety_keywords(text)
     metadata = extract_metadata(text)
     
-    # Generate searchable text (lowercase for case-insensitive search)
-    searchable_text = text.lower()
-    
-    # Create knowledge entry
     knowledge_entry = {
         'filename': filename,
         'full_text': text,
-        'searchable_text': searchable_text,
+        'searchable_text': text.lower(),
         'safety_keywords': safety_keywords,
         'metadata': metadata,
         'upload_date': datetime.datetime.now(),
@@ -180,7 +262,6 @@ def process_document(file_path, filename):
     """Process different document types and extract information"""
     file_extension = os.path.splitext(filename)[1].lower()
     
-    # Extract text based on file type
     if file_extension == '.pdf':
         text = extract_text_from_pdf(file_path)
     elif file_extension == '.docx':
@@ -195,8 +276,22 @@ def process_document(file_path, filename):
     if not text or len(text.strip()) == 0:
         return None, "No text could be extracted from the document"
     
-    # Generate searchable knowledge content
     knowledge_entry = generate_searchable_content(text, filename)
+    
+    # Also index for RAG if available
+    try:
+        from rag_system import rag_system
+        metadata = {
+            'filename': filename,
+            'uploaded_by': session.get('username', 'unknown'),
+            'upload_date': datetime.datetime.now().isoformat()
+        }
+        rag_system.add_document(text, metadata)
+        knowledge_entry['rag_indexed'] = True
+        print(f"✅ Document indexed for RAG: {filename}")
+    except Exception as e:
+        print(f"⚠️ RAG indexing failed: {e}")
+        knowledge_entry['rag_indexed'] = False
     
     return knowledge_entry, "Document processed successfully"
 
@@ -206,13 +301,10 @@ def search_knowledge_base(query, search_type='full_text'):
     query_lower = query.lower()
     
     if search_type == 'full_text':
-        # Full text search using regex (simple search)
         for doc in knowledge_col.find():
             searchable_text = doc.get('searchable_text', '').lower()
             if query_lower in searchable_text:
-                # Create a snippet around the search term with context
                 text = doc.get('full_text', '')
-                # Find all occurrences and create snippets
                 snippets = []
                 start_pos = 0
                 while True:
@@ -225,10 +317,7 @@ def search_knowledge_base(query, search_type='full_text'):
                     snippets.append(snippet)
                     start_pos = index + 1
                 
-                # Combine snippets, limit to 3
                 combined_snippet = ' '.join(snippets[:3]) if snippets else text[:300] + '...'
-                
-                # Get section references if available
                 metadata = doc.get('metadata', {})
                 sections = metadata.get('sections', [])
                 
@@ -242,7 +331,6 @@ def search_knowledge_base(query, search_type='full_text'):
                 })
     
     elif search_type == 'keyword':
-        # Search by safety keywords
         for doc in knowledge_col.find():
             safety_keywords = doc.get('safety_keywords', {})
             found = False
@@ -262,26 +350,26 @@ def search_knowledge_base(query, search_type='full_text'):
     
     return results
 
-# ------------------- ROUTES -------------------
+# ============================================
+# FLASK ROUTES
+# ============================================
 
 @app.route('/')
 def index():
     if 'username' not in session: 
         return redirect(url_for('login'))
-        
-    # ONLY find logs where 'uploaded_by' matches the current session user
-    historical_logs = list(records_col.find({'uploaded_by': session['username']}).sort('_id', -1))
     
+    historical_logs = list(records_col.find({'uploaded_by': session['username']}).sort('_id', -1))
     return render_template('dashboard.html', user=session['username'], role=session['role'], data=historical_logs)
 
 @app.route('/upload-feed', methods=['GET', 'POST'])
 def upload_feed():
     if 'username' not in session:
         return redirect(url_for('login'))
-        
+    
     if request.method == 'GET':
         return render_template('upload.html', user=session['username'], role=session['role'])
-        
+    
     if 'file' not in request.files: 
         return 'Payload Error: Missing File Element'
     target_file = request.files['file']
@@ -300,61 +388,62 @@ def upload_feed():
     rendered_name = 'processed_' + target_file.filename
     save_destination = os.path.join(app.config['RESULT_FOLDER'], rendered_name)
 
-    if target_file.filename.lower().endswith(('.mp4', '.avi', '.mov')):
-        video_capture = cv2.VideoCapture(disk_path)
-        frame_width = int(video_capture.get(cv2.CAP_PROP_FRAME_WIDTH))
-        frame_height = int(video_capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        fps = int(video_capture.get(cv2.CAP_PROP_FPS)) if int(video_capture.get(cv2.CAP_PROP_FPS)) > 0 else 30
-        
-        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-        video_writer = cv2.VideoWriter(save_destination, fourcc, fps, (frame_width, frame_height))
-
-        while video_capture.isOpened():
-            success, frame = video_capture.read()
-            if not success:
-                break
-            frame_results = model(frame, conf=0.35)
-            annotated_frame = frame_results[0].plot()
-            video_writer.write(annotated_frame)
+    if model is not None:
+        if target_file.filename.lower().endswith(('.mp4', '.avi', '.mov')):
+            video_capture = cv2.VideoCapture(disk_path)
+            frame_width = int(video_capture.get(cv2.CAP_PROP_FRAME_WIDTH))
+            frame_height = int(video_capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
+            fps = int(video_capture.get(cv2.CAP_PROP_FPS)) if int(video_capture.get(cv2.CAP_PROP_FPS)) > 0 else 30
             
-            for bounding_box in frame_results[0].boxes:
-                tag_class = model.names[int(bounding_box.cls[0])]
-                tag_lower = tag_class.lower().strip()
+            fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+            video_writer = cv2.VideoWriter(save_destination, fourcc, fps, (frame_width, frame_height))
+
+            while video_capture.isOpened():
+                success, frame = video_capture.read()
+                if not success:
+                    break
+                frame_results = model(frame, conf=0.35)
+                annotated_frame = frame_results[0].plot()
+                video_writer.write(annotated_frame)
                 
-                if "no-" in tag_lower or "no " in tag_lower or "missing" in tag_lower:
-                    continue
+                for bounding_box in frame_results[0].boxes:
+                    tag_class = model.names[int(bounding_box.cls[0])]
+                    tag_lower = tag_class.lower().strip()
                     
-                if 'person' in tag_lower or 'worker' in tag_lower: 
-                    count_workers += 1
-                elif 'helmet' in tag_lower or 'hardhat' in tag_lower or 'head' in tag_lower: 
-                    count_helmets += 1
-                elif 'vest' in tag_lower or 'jacket' in tag_lower: 
-                    count_vests += 1
-                elif 'mask' in tag_lower: 
-                    count_masks += 1
+                    if "no-" in tag_lower or "no " in tag_lower or "missing" in tag_lower:
+                        continue
+                        
+                    if 'person' in tag_lower or 'worker' in tag_lower: 
+                        count_workers += 1
+                    elif 'helmet' in tag_lower or 'hardhat' in tag_lower or 'head' in tag_lower: 
+                        count_helmets += 1
+                    elif 'vest' in tag_lower or 'jacket' in tag_lower: 
+                        count_vests += 1
+                    elif 'mask' in tag_lower: 
+                        count_masks += 1
+                        
+            video_capture.release()
+            video_writer.release()
+        else:
+            inference_results = model(disk_path, conf=0.35)
+            for item in inference_results:
+                for bounding_box in item.boxes:
+                    tag_class = model.names[int(bounding_box.cls[0])]
+                    extracted_tags.append({'tag': tag_class, 'confidence': float(bounding_box.conf[0])})
+                    tag_lower = tag_class.lower().strip()
                     
-        video_capture.release()
-        video_writer.release()
-    else:
-        inference_results = model(disk_path, conf=0.35)
-        for item in inference_results:
-            for bounding_box in item.boxes:
-                tag_class = model.names[int(bounding_box.cls[0])]
-                extracted_tags.append({'tag': tag_class, 'confidence': float(bounding_box.conf[0])})
-                tag_lower = tag_class.lower().strip()
-                
-                if "no-" in tag_lower or "no " in tag_lower or "missing" in tag_lower:
-                    continue
-                    
-                if 'person' in tag_lower or 'worker' in tag_lower: 
-                    count_workers += 1
-                elif 'helmet' in tag_lower or 'hardhat' in tag_lower or 'head' in tag_lower: 
-                    count_helmets += 1
-                elif 'vest' in tag_lower or 'jacket' in tag_lower: 
-                    count_vests += 1
-                elif 'mask' in tag_lower: 
-                    count_masks += 1
-        inference_results[0].save(save_destination)
+                    if "no-" in tag_lower or "no " in tag_lower or "missing" in tag_lower:
+                        continue
+                        
+                    if 'person' in tag_lower or 'worker' in tag_lower: 
+                        count_workers += 1
+                    elif 'helmet' in tag_lower or 'hardhat' in tag_lower or 'head' in tag_lower: 
+                        count_helmets += 1
+                    elif 'vest' in tag_lower or 'jacket' in tag_lower: 
+                        count_vests += 1
+                    elif 'mask' in tag_lower: 
+                        count_masks += 1
+            inference_results[0].save(save_destination)
 
     compliance_state = 'SAFE'
     violation_incident_reports = []
@@ -383,13 +472,9 @@ def upload_document():
         return redirect(url_for('login'))
     
     if request.method == 'GET':
-        # Get all processed documents for the current user with processing status
         user_docs = list(documents_col.find({'uploaded_by': session['username']}).sort('_id', -1))
-        # Add status for each document (simulate processing)
         for doc in user_docs:
-            # Simulate different processing statuses for demo
             if 'status' not in doc:
-                # Randomly assign status for demo purposes
                 import random
                 statuses = ['Processed', 'Analyzing', 'Completed']
                 doc['status'] = statuses[random.randint(0, 2)]
@@ -406,27 +491,22 @@ def upload_document():
     if file.filename == '':
         return jsonify({'error': 'No file selected'}), 400
     
-    # Secure filename
     filename = secure_filename(file.filename)
     file_path = os.path.join(app.config['DOCUMENT_FOLDER'], filename)
     file.save(file_path)
     
-    # Process the document
     knowledge_entry, message = process_document(file_path, filename)
     
     if knowledge_entry is None:
         return jsonify({'error': message}), 400
     
-    # Get document section for display
     sections = knowledge_entry.get('metadata', {}).get('sections', [])
     if not sections and knowledge_entry.get('full_text'):
-        # Try to extract sections from content
         text = knowledge_entry.get('full_text', '')
         section_matches = re.findall(r'(?i)(section|chapter|part)\s+\d+\.?\d*[:.]?\s*([^\n]+)', text)
         if section_matches:
             sections = [f"{match[0]} {match[1].strip()}" for match in section_matches[:5]]
     
-    # Store in MongoDB
     document_record = {
         'uploaded_by': session['username'],
         'filename': filename,
@@ -436,13 +516,11 @@ def upload_document():
         'processing_status': 'completed',
         'status': 'Processed',
         'progress': 100,
-        'sections': sections[:5]  # Store first 5 sections
+        'sections': sections[:5],
+        'rag_indexed': knowledge_entry.get('rag_indexed', False)
     }
     
-    # Insert into documents collection
     doc_id = documents_col.insert_one(document_record).inserted_id
-    
-    # Also store in knowledge repository for searching
     knowledge_entry['document_id'] = doc_id
     knowledge_entry['uploaded_by'] = session['username']
     knowledge_col.insert_one(knowledge_entry)
@@ -452,6 +530,7 @@ def upload_document():
         'message': message,
         'document_id': str(doc_id),
         'filename': filename,
+        'rag_indexed': knowledge_entry.get('rag_indexed', False),
         'extracted_info': {
             'safety_keywords': knowledge_entry.get('safety_keywords', {}),
             'metadata': knowledge_entry.get('metadata', {})
@@ -472,7 +551,6 @@ def search_knowledge():
     if not query:
         return jsonify({'error': 'Search query is required'}), 400
     
-    # Search the knowledge base
     results = search_knowledge_base(query, search_type)
     
     return render_template('knowledge_search.html', 
@@ -509,22 +587,16 @@ def delete_document(doc_id):
     from bson.errors import InvalidId
     
     try:
-        print(f"Attempting to delete document with ID: {doc_id}")
-        
-        # First, find the document to get its file path
         doc = None
         obj_id = None
         
-        # Try to convert to ObjectId
         try:
             obj_id = ObjectId(doc_id)
             doc = documents_col.find_one({
                 '_id': obj_id,
                 'uploaded_by': session['username']
             })
-        except (InvalidId, ValueError) as e:
-            print(f"Invalid ObjectId: {e}")
-            # If not a valid ObjectId, try to find by filename
+        except (InvalidId, ValueError):
             doc = documents_col.find_one({
                 'filename': doc_id,
                 'uploaded_by': session['username']
@@ -535,13 +607,9 @@ def delete_document(doc_id):
         if not doc:
             return jsonify({'error': 'Document not found or you do not have permission to delete it'}), 404
         
-        # Store file path and filename before deletion
         file_path = doc.get('file_path')
         filename = doc.get('filename')
         
-        print(f"Deleting document: {filename} with ID: {obj_id}")
-        
-        # Delete from documents collection
         result = documents_col.delete_one({
             '_id': obj_id,
             'uploaded_by': session['username']
@@ -550,21 +618,16 @@ def delete_document(doc_id):
         if result.deleted_count == 0:
             return jsonify({'error': 'Failed to delete document'}), 500
         
-        # Delete from knowledge repository
         knowledge_result = knowledge_col.delete_many({
             'document_id': obj_id,
             'uploaded_by': session['username']
         })
-        print(f"Deleted {knowledge_result.deleted_count} entries from knowledge repository")
         
-        # Delete the physical file if it exists
         if file_path and os.path.exists(file_path):
             try:
                 os.remove(file_path)
-                print(f"Deleted file: {file_path}")
             except Exception as e:
                 print(f"Warning: Could not delete file: {e}")
-                # Don't fail the request if file can't be deleted
         
         return jsonify({
             'success': True,
@@ -573,8 +636,6 @@ def delete_document(doc_id):
         
     except Exception as e:
         print(f"Error deleting document: {e}")
-        import traceback
-        traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
 @app.route('/knowledge-stats')
@@ -584,13 +645,11 @@ def knowledge_stats():
     
     total_docs = documents_col.count_documents({'uploaded_by': session['username']})
     
-    # Count documents by type
     doc_types = {}
     for doc in documents_col.find({'uploaded_by': session['username']}):
         ext = os.path.splitext(doc.get('filename', ''))[1].lower()
         doc_types[ext] = doc_types.get(ext, 0) + 1
     
-    # Count documents with safety keywords
     keyword_counts = {}
     for doc in documents_col.find({'uploaded_by': session['username']}):
         knowledge = doc.get('knowledge_entry', {})
@@ -645,6 +704,7 @@ def export_knowledge_pdf():
             <div class="doc-filename">{{ doc.filename }}</div>
             <div><strong>Uploaded:</strong> {{ doc.upload_date }}</div>
             <div><strong>Status:</strong> {{ doc.get('status', 'Processed') }}</div>
+            <div><strong>RAG Indexed:</strong> {{ '✅ Yes' if doc.get('rag_indexed') else '❌ No' }}</div>
             
             {% set knowledge = doc.get('knowledge_entry', {}) %}
             
@@ -747,103 +807,6 @@ def register():
         })
         return redirect(url_for('login'))
     return render_template('register.html')
-
-@app.route('/upload', methods=['POST'])
-def handle_upload():
-    if 'file' not in request.files: 
-        return 'Payload Error: Missing File Element'
-    target_file = request.files['file']
-    if target_file.filename == '': 
-        return 'Payload Error: Null Reference Standard'
-
-    disk_path = os.path.join(app.config['UPLOAD_FOLDER'], target_file.filename)
-    target_file.save(disk_path)
-
-    extracted_tags = []
-    count_workers = 0
-    count_helmets = 0
-    count_vests = 0
-    count_masks = 0
-    
-    rendered_name = 'processed_' + target_file.filename
-    save_destination = os.path.join(app.config['RESULT_FOLDER'], rendered_name)
-
-    if target_file.filename.lower().endswith(('.mp4', '.avi', '.mov')):
-        video_capture = cv2.VideoCapture(disk_path)
-        frame_width = int(video_capture.get(cv2.CAP_PROP_FRAME_WIDTH))
-        frame_height = int(video_capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        fps = int(video_capture.get(cv2.CAP_PROP_FPS)) if int(video_capture.get(cv2.CAP_PROP_FPS)) > 0 else 30
-        
-        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-        video_writer = cv2.VideoWriter(save_destination, fourcc, fps, (frame_width, frame_height))
-
-        while video_capture.isOpened():
-            success, frame = video_capture.read()
-            if not success:
-                break
-            frame_results = model(frame, conf=0.35)
-            annotated_frame = frame_results[0].plot()
-            video_writer.write(annotated_frame)
-            
-            for bounding_box in frame_results[0].boxes:
-                tag_class = model.names[int(bounding_box.cls[0])]
-                tag_lower = tag_class.lower().strip()
-                
-                if "no-" in tag_lower or "no " in tag_lower or "missing" in tag_lower:
-                    continue
-                    
-                if 'person' in tag_lower or 'worker' in tag_lower: 
-                    count_workers += 1
-                elif 'helmet' in tag_lower or 'hardhat' in tag_lower or 'head' in tag_lower: 
-                    count_helmets += 1
-                elif 'vest' in tag_lower or 'jacket' in tag_lower: 
-                    count_vests += 1
-                elif 'mask' in tag_lower: 
-                    count_masks += 1
-                    
-        video_capture.release()
-        video_writer.release()
-    else:
-        inference_results = model(disk_path, conf=0.35)
-        for item in inference_results:
-            for bounding_box in item.boxes:
-                tag_class = model.names[int(bounding_box.cls[0])]
-                extracted_tags.append({'tag': tag_class, 'confidence': float(bounding_box.conf[0])})
-                tag_lower = tag_class.lower().strip()
-                
-                if "no-" in tag_lower or "no " in tag_lower or "missing" in tag_lower:
-                    continue
-                    
-                if 'person' in tag_lower or 'worker' in tag_lower: 
-                    count_workers += 1
-                elif 'helmet' in tag_lower or 'hardhat' in tag_lower or 'head' in tag_lower: 
-                    count_helmets += 1
-                elif 'vest' in tag_lower or 'jacket' in tag_lower: 
-                    count_vests += 1
-                elif 'mask' in tag_lower: 
-                    count_masks += 1
-        inference_results[0].save(save_destination)
-
-    compliance_state = 'SAFE'
-    violation_incident_reports = []
-    if count_helmets < count_workers:
-        compliance_state = 'VIOLATION DETECTED'
-        violation_incident_reports.append('Hazard Alert: Missing helmet protective gear.')
-    if count_vests < count_workers:
-        compliance_state = 'VIOLATION DETECTED'
-        violation_incident_reports.append('Hazard Alert: Missing high-visibility vest safety gear.')
-
-    records_col.insert_one({
-        'uploaded_by': session['username'],
-        'file_name': target_file.filename,
-        'processed_url': '/' + save_destination,
-        'status': compliance_state,
-        'violations': violation_incident_reports,
-        'summary': {'workers': count_workers, 'helmets': count_helmets, 'vests': count_vests, 'masks': count_masks},
-        'raw_payload': extracted_tags,
-        'upload_date': datetime.datetime.now()
-    })
-    return redirect(url_for('index'))
 
 @app.route('/logout')
 def logout():
@@ -1053,9 +1016,9 @@ def export_pdf():
     response.headers['Content-Disposition'] = f'attachment; filename=VisionDesk_Compliance_Report_{datetime.date.today()}.pdf'
     return response
 
-
-# ==================== DELETE ROUTES FOR VISUAL RECORDS ====================
-# These MUST be before if __name__ == '__main__'
+# ============================================
+# DELETE ROUTES FOR VISUAL RECORDS
+# ============================================
 
 @app.route('/delete-visual-record/<record_id>', methods=['POST'])
 def delete_visual_record(record_id):
@@ -1066,15 +1029,11 @@ def delete_visual_record(record_id):
     from bson.errors import InvalidId
     
     try:
-        print(f"Attempting to delete visual record with ID: {record_id}")
-        
-        # Try to convert to ObjectId
         try:
             obj_id = ObjectId(record_id)
         except (InvalidId, ValueError):
             return jsonify({'error': 'Invalid record ID format'}), 400
         
-        # Find the record first to get the file path
         record = records_col.find_one({
             '_id': obj_id,
             'uploaded_by': session['username']
@@ -1083,32 +1042,25 @@ def delete_visual_record(record_id):
         if not record:
             return jsonify({'error': 'Record not found or you do not have permission to delete it'}), 404
         
-        # Get the processed file path
         processed_url = record.get('processed_url', '')
         if processed_url:
-            # Remove leading slash if present
             if processed_url.startswith('/'):
                 processed_url = processed_url[1:]
-            # Try to delete the processed file
             if os.path.exists(processed_url):
                 try:
                     os.remove(processed_url)
-                    print(f"Deleted file: {processed_url}")
                 except Exception as e:
                     print(f"Warning: Could not delete file: {e}")
         
-        # Also try to delete the original uploaded file
         original_file = record.get('file_name', '')
         if original_file:
             original_path = os.path.join(app.config['UPLOAD_FOLDER'], original_file)
             if os.path.exists(original_path):
                 try:
                     os.remove(original_path)
-                    print(f"Deleted original file: {original_path}")
                 except Exception as e:
                     print(f"Warning: Could not delete original file: {e}")
         
-        # Delete from database
         result = records_col.delete_one({
             '_id': obj_id,
             'uploaded_by': session['username']
@@ -1124,10 +1076,7 @@ def delete_visual_record(record_id):
         
     except Exception as e:
         print(f"Error deleting visual record: {e}")
-        import traceback
-        traceback.print_exc()
         return jsonify({'error': str(e)}), 500
-
 
 @app.route('/delete-all-visual-records', methods=['POST'])
 def delete_all_visual_records():
@@ -1135,7 +1084,6 @@ def delete_all_visual_records():
         return jsonify({'error': 'Please login first'}), 401
     
     try:
-        # Get all records for the user
         records = list(records_col.find({'uploaded_by': session['username']}))
         
         if not records:
@@ -1146,7 +1094,6 @@ def delete_all_visual_records():
         
         for record in records:
             try:
-                # Delete processed file
                 processed_url = record.get('processed_url', '')
                 if processed_url:
                     if processed_url.startswith('/'):
@@ -1157,7 +1104,6 @@ def delete_all_visual_records():
                         except Exception as e:
                             failed_deletions.append(f"Could not delete {processed_url}: {e}")
                 
-                # Delete original file
                 original_file = record.get('file_name', '')
                 if original_file:
                     original_path = os.path.join(app.config['UPLOAD_FOLDER'], original_file)
@@ -1167,7 +1113,6 @@ def delete_all_visual_records():
                         except Exception as e:
                             failed_deletions.append(f"Could not delete {original_path}: {e}")
                 
-                # Delete from database
                 records_col.delete_one({
                     '_id': record['_id'],
                     'uploaded_by': session['username']
@@ -1190,11 +1135,125 @@ def delete_all_visual_records():
         
     except Exception as e:
         print(f"Error deleting all visual records: {e}")
-        import traceback
-        traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
+# ============================================
+# RAG & AGENT ROUTES
+# ============================================
 
-# ==================== MAIN ====================
+@app.route('/api/rag/stats', methods=['GET'])
+def rag_stats():
+    """Get RAG system statistics"""
+    if 'username' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        stats = rag_system.get_document_stats()
+        
+        # Get incident stats
+        incidents = db['incidents']
+        total_incidents = incidents.count_documents({})
+        active_incidents = incidents.count_documents({'status': 'active'})
+        
+        stats.update({
+            'total_incidents': total_incidents,
+            'active_incidents': active_incidents
+        })
+        
+        return jsonify(stats)
+    except Exception as e:
+        return jsonify({
+            'total_chunks': 0,
+            'documents': 0,
+            'total_incidents': 0,
+            'active_incidents': 0,
+            'error': str(e)
+        }), 200
+
+@app.route('/api/rag/search', methods=['POST'])
+def rag_search():
+    """API endpoint for RAG search"""
+    if 'username' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    data = request.get_json()
+    query = data.get('query', '')
+    top_k = data.get('top_k', 5)
+    
+    if not query:
+        return jsonify({'error': 'Query is required'}), 400
+    
+    try:
+        results = rag_system.search(query, top_k)
+        return jsonify({
+            'query': query,
+            'results': results,
+            'result_count': len(results)
+        })
+    except Exception as e:
+        return jsonify({'error': str(e), 'results': []}), 500
+
+@app.route('/api/agent/query', methods=['POST'])
+def agent_query():
+    """API endpoint for agent processing"""
+    if 'username' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    data = request.get_json()
+    query = data.get('query', '')
+    
+    if not query:
+        return jsonify({'error': 'Query is required'}), 400
+    
+    try:
+        result = visiondesk_agent.process_query(query, session['username'])
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({
+            'error': str(e),
+            'response': f"I encountered an error: {str(e)}. Please try again.",
+            'query': query
+        }), 500
+
+@app.route('/rag-chat', methods=['GET', 'POST'])
+def rag_chat():
+    """RAG Chat interface"""
+    if 'username' not in session:
+        return redirect(url_for('login'))
+    
+    if request.method == 'GET':
+        return render_template('rag_chat.html', 
+                             user=session['username'], 
+                             role=session['role'])
+    
+    query = request.form.get('query', '')
+    if not query:
+        return jsonify({'error': 'Query is required'}), 400
+    
+    try:
+        result = visiondesk_agent.process_query(query, session['username'])
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({
+            'error': str(e),
+            'response': f"Error: {str(e)}",
+            'query': query
+        }), 500
+
+# ============================================
+# MAIN
+# ============================================
+
 if __name__ == '__main__':
+    print("=" * 60)
+    print("🚀 VisionDesk AI Server Starting...")
+    print("=" * 60)
+    print(f"📁 Upload folder: {app.config['UPLOAD_FOLDER']}")
+    print(f"📁 Result folder: {app.config['RESULT_FOLDER']}")
+    print(f"📁 Document folder: {app.config['DOCUMENT_FOLDER']}")
+    print(f"🗄️  MongoDB: mongodb://localhost:27017/visiondesk_db")
+    print(f"🔑 Secret key: {app.secret_key[:10]}...")
+    print("=" * 60)
+    print("🌐 Server running at: http://127.0.0.1:5000")
+    print("=" * 60)
     app.run(host='127.0.0.1', port=5000, debug=True, use_reloader=False)

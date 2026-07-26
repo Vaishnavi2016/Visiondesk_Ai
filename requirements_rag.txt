@@ -1,0 +1,6 @@
+# requirements_rag.txt
+sentence-transformers==2.2.2
+faiss-cpu==1.7.4
+langgraph==0.0.20
+langchain==0.1.0
+langchain-openai==0.0.5

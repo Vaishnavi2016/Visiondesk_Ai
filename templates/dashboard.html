@@ -85,6 +85,17 @@
             color: white;
         }
 
+        /* NEW: RAG Menu Item */
+        .menu a.rag-link {
+            background: linear-gradient(90deg, #7c3aed, #a78bfa);
+            color: white;
+            box-shadow: 0 4px 15px rgba(124, 58, 237, 0.3);
+        }
+        .menu a.rag-link:hover {
+            transform: translateX(6px) scale(1.02);
+            box-shadow: 0 6px 25px rgba(124, 58, 237, 0.5);
+        }
+
         .logout {
             margin-top: auto;
         }
@@ -163,7 +174,7 @@
         /* Cards */
         .cards {
             display: grid;
-            grid-template-columns: repeat(5, 1fr);
+            grid-template-columns: repeat(6, 1fr);
             gap: 25px;
             margin-top: 30px;
         }
@@ -372,6 +383,16 @@
             background: #b91c1c;
         }
 
+        .action-btn.rag-btn {
+            background: linear-gradient(90deg, #7c3aed, #a78bfa);
+            border: none;
+        }
+
+        .action-btn.rag-btn:hover {
+            background: linear-gradient(90deg, #6d28d9, #8b5cf6);
+            transform: translateX(8px);
+        }
+
         /* Delete button for records */
         .record-delete-btn {
             background: #dc2626;
@@ -545,7 +566,33 @@
             }
         }
 
+        /* RAG Status Badge */
+        .rag-status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            background: rgba(124, 58, 237, 0.2);
+            color: #a78bfa;
+            border: 1px solid rgba(124, 58, 237, 0.3);
+        }
+
+        .rag-status-badge.active {
+            background: rgba(34, 197, 94, 0.2);
+            color: #22c55e;
+            border-color: rgba(34, 197, 94, 0.3);
+        }
+
         /* Responsive */
+        @media(max-width:1400px) {
+            .cards {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
         @media(max-width:1200px) {
             .cards {
                 grid-template-columns: repeat(3, 1fr);
@@ -621,6 +668,31 @@
             color: #38bdf8;
             font-weight: 600;
         }
+
+        /* RAG Knowledge Widget */
+        .rag-widget {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .rag-stat {
+            text-align: center;
+            padding: 15px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .rag-stat .value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #a78bfa;
+        }
+        .rag-stat .label {
+            font-size: 12px;
+            color: #94a3b8;
+            margin-top: 4px;
+        }
     </style>
 </head>
 
@@ -648,6 +720,11 @@
                 <i class="fa-solid fa-magnifying-glass"></i>
                 🔍 Search Knowledge
             </a>
+            <!-- NEW: RAG AI Assistant Link -->
+            <a href="/rag-chat" class="rag-link">
+                <i class="fa-solid fa-comments"></i>
+                🤖 AI Assistant
+            </a>
             <a href="/export/pdf">
                 <i class="fa-solid fa-file-pdf"></i>
                 Reports
@@ -673,7 +750,7 @@
         <div class="header">
             <div>
                 <h2>Welcome Back, {{ user }}</h2>
-                <p style="color:#94a3b8">AI Powered PPE Detection Dashboard</p>
+                <p style="color:#94a3b8">AI Powered PPE Detection & Knowledge Intelligence</p>
             </div>
             <div class="user">
                 <div class="search">
@@ -759,6 +836,58 @@
                         <i class="fa-solid fa-file-pdf"></i>
                     </div>
                 </div>
+            </div>
+
+            <!-- NEW: RAG Knowledge Card -->
+            <div class="card-box" style="background: linear-gradient(135deg, #1a1a2e, #16213e);">
+                <div class="card-top">
+                    <div>
+                        <div class="label">🧠 AI Knowledge</div>
+                        <div class="number" id="ragChunks">0</div>
+                    </div>
+                    <div class="icon" style="background: linear-gradient(135deg, #7c3aed, #a78bfa);">
+                        <i class="fa-solid fa-brain"></i>
+                    </div>
+                </div>
+                <div style="font-size: 12px; color: #94a3b8; margin-top: 4px;">
+                    <span id="ragDocs">0</span> documents indexed
+                </div>
+            </div>
+        </div>
+
+        <!-- NEW: RAG Knowledge Base Widget -->
+        <div class="chart-card" style="border: 1px solid rgba(124, 58, 237, 0.2);">
+            <div class="chart-title">
+                <span><i class="fa-solid fa-brain" style="color: #a78bfa;"></i> AI Knowledge Base Status</span>
+                <span class="rag-status-badge" id="ragStatusBadge">
+                    <i class="fa-solid fa-circle" style="font-size: 8px;"></i>
+                    <span id="ragStatusText">Loading...</span>
+                </span>
+            </div>
+            <div class="rag-widget">
+                <div class="rag-stat">
+                    <div class="value" id="ragTotalDocs">0</div>
+                    <div class="label">📄 Documents</div>
+                </div>
+                <div class="rag-stat">
+                    <div class="value" id="ragTotalChunks">0</div>
+                    <div class="label">📚 Knowledge Chunks</div>
+                </div>
+                <div class="rag-stat">
+                    <div class="value" id="ragTotalIncidents">0</div>
+                    <div class="label">⚠️ Incidents Logged</div>
+                </div>
+            </div>
+            <div style="margin-top: 15px; display: flex; gap: 15px; flex-wrap: wrap; justify-content: center;">
+                <a href="/rag-chat" class="action-btn rag-btn" style="display: inline-block; padding: 12px 30px; min-width: 200px;">
+                    <i class="fa-solid fa-comments"></i> Ask AI Assistant
+                </a>
+                <a href="/search-knowledge" class="action-btn green" style="display: inline-block; padding: 12px 30px; min-width: 200px;">
+                    <i class="fa-solid fa-magnifying-glass"></i> Smart Search
+                </a>
+                <a href="/knowledge-stats" class="action-btn orange" style="display: inline-block; padding: 12px 30px; min-width: 200px;">
+                    <i class="fa-solid fa-chart-pie"></i> Knowledge Stats
+                </a>
             </div>
         </div>
 
@@ -860,6 +989,11 @@
                         <i class="fa-solid fa-file-pdf"></i>
                         Upload Document
                     </a>
+                    <!-- NEW: AI Assistant Quick Action -->
+                    <a href="/rag-chat" class="action-btn rag-btn">
+                        <i class="fa-solid fa-comments"></i>
+                        🤖 Ask AI Assistant
+                    </a>
                     <a href="/export/pdf" class="action-btn red">
                         <i class="fa-solid fa-file-pdf"></i>
                         Export Compliance Report
@@ -906,6 +1040,7 @@
 
     <!-- Dashboard Charts -->
     <script>
+        // ==================== CHART ====================
         const ctx = document.getElementById("chart");
         new Chart(ctx, {
             type: "bar",
@@ -956,7 +1091,7 @@
             }
         });
 
-        // Animated Counter
+        // ==================== ANIMATED COUNTER ====================
         document.querySelectorAll(".number").forEach(counter => {
             const target = parseInt(counter.innerText);
             let count = 0;
@@ -972,7 +1107,7 @@
             update();
         });
 
-        // Search Detection Cards
+        // ==================== SEARCH ====================
         const searchInput = document.querySelector(".search input");
         const cards = document.querySelectorAll(".record-card");
         if (searchInput) {
@@ -985,7 +1120,7 @@
             });
         }
 
-        // Notification
+        // ==================== NOTIFICATION ====================
         const notify = document.querySelector(".notification");
         if (notify) {
             notify.addEventListener("click", () => {
@@ -993,7 +1128,7 @@
             });
         }
 
-        // Fetch document statistics
+        // ==================== FETCH DOCUMENT STATS ====================
         fetch('/knowledge-stats')
             .then(response => response.json())
             .then(data => {
@@ -1004,11 +1139,53 @@
                 document.getElementById('docCount').textContent = '0';
             });
 
+        // ==================== FETCH RAG STATS ====================
+        async function fetchRAGStats() {
+            try {
+                const response = await fetch('/api/rag/stats');
+                if (!response.ok) {
+                    throw new Error('RAG API not available');
+                }
+                const data = await response.json();
+                
+                // Update RAG cards
+                document.getElementById('ragChunks').textContent = data.total_chunks || 0;
+                document.getElementById('ragDocs').textContent = data.documents || 0;
+                
+                // Update RAG widget
+                document.getElementById('ragTotalDocs').textContent = data.documents || 0;
+                document.getElementById('ragTotalChunks').textContent = data.total_chunks || 0;
+                document.getElementById('ragTotalIncidents').textContent = data.total_incidents || 0;
+                
+                // Update status badge
+                const statusBadge = document.getElementById('ragStatusBadge');
+                const statusText = document.getElementById('ragStatusText');
+                
+                if (data.total_chunks > 0) {
+                    statusBadge.className = 'rag-status-badge active';
+                    statusText.textContent = `${data.total_chunks} chunks indexed • Active`;
+                } else {
+                    statusBadge.className = 'rag-status-badge';
+                    statusText.textContent = 'No documents indexed yet';
+                }
+            } catch (error) {
+                console.log('RAG stats not available:', error);
+                document.getElementById('ragChunks').textContent = '0';
+                document.getElementById('ragDocs').textContent = '0';
+                document.getElementById('ragTotalDocs').textContent = '0';
+                document.getElementById('ragTotalChunks').textContent = '0';
+                document.getElementById('ragTotalIncidents').textContent = '0';
+                document.getElementById('ragStatusText').textContent = 'RAG not initialized';
+            }
+        }
+
+        // Call RAG stats on page load
+        document.addEventListener('DOMContentLoaded', fetchRAGStats);
+
         // ==================== DELETE FUNCTIONS ====================
-        
         let deleteTargetId = null;
         let deleteTargetName = '';
-        let deleteType = 'record'; // 'record' or 'all'
+        let deleteType = 'record';
 
         function confirmDeleteRecord(recordId, fileName) {
             deleteTargetId = recordId;
@@ -1055,7 +1232,6 @@
                 }
             })
             .then(response => {
-                // Check if response is OK
                 if (!response.ok) {
                     return response.text().then(text => {
                         throw new Error(text || 'Server error occurred');
@@ -1068,7 +1244,6 @@
                     showToast('✅ ' + data.message, 'success');
                     
                     if (deleteType === 'all') {
-                        // Remove all record cards
                         document.querySelectorAll('.record-card').forEach(card => {
                             card.classList.add('deleting');
                         });
@@ -1076,13 +1251,11 @@
                             location.reload();
                         }, 500);
                     } else {
-                        // Remove the specific card
                         const card = document.getElementById(`record-${deleteTargetId}`);
                         if (card) {
                             card.classList.add('deleting');
                             setTimeout(() => {
                                 card.remove();
-                                // Update counts if needed
                                 const remaining = document.querySelectorAll('.record-card');
                                 if (remaining.length === 0) {
                                     location.reload();
@@ -1098,7 +1271,6 @@
             })
             .catch(error => {
                 console.error('Delete error:', error);
-                // Check if it's an HTML response (likely a redirect to login)
                 if (error.message.includes('<!doctype') || error.message.includes('<!DOCTYPE')) {
                     showToast('❌ Session expired. Please refresh and login again.', 'error');
                     setTimeout(() => {
@@ -1135,6 +1307,10 @@
                 closeDeleteModal();
             }
         });
+
+        // ==================== RAG REFRESH ====================
+        // Refresh RAG stats every 30 seconds
+        setInterval(fetchRAGStats, 30000);
     </script>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
