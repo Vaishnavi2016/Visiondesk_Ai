@@ -279,16 +279,16 @@
         </div>
 
         <div class="suggested-questions">
-            <button onclick="sendQuery('Why was there a safety violation in Zone A this morning?')">
+            <button onclick="sendQuery('Investigate Zone A')">
                 🔍 Investigate Zone A
             </button>
-            <button onclick="sendQuery('What are the latest safety violations reported?')">
-                ⚠️ Recent Violations
+            <button onclick="sendQuery('Show recent violations')">
+                🚨 Recent Violations
             </button>
-            <button onclick="sendQuery('Summarize PPE compliance for this week')">
-                📊 PPE Compliance
+            <button onclick="sendQuery('PPE compliance report')">
+                🛡️ PPE Compliance
             </button>
-            <button onclick="sendQuery('What does the safety manual say about helmet requirements?')">
+            <button onclick="sendQuery('Find safety manual')">
                 📖 Safety Manual
             </button>
         </div>
@@ -308,6 +308,9 @@
     </div>
 </div>
 
+<!-- ============================================ -->
+<!-- JAVASCRIPT - CORRECTLY PLACED AT THE END     -->
+<!-- ============================================ -->
 <script>
     const chatMessages = document.getElementById('chatMessages');
     const chatInput = document.getElementById('chatInput');
@@ -323,6 +326,7 @@
         const div = document.createElement('div');
         div.className = `message ${sender}`;
         
+        // Convert newlines to <br> and handle bold text
         let html = text
             .replace(/\n/g, '<br>')
             .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
@@ -350,17 +354,36 @@
         const query = chatInput.value.trim();
         if (!query) return;
 
+        // Disable input while processing
         chatInput.disabled = true;
         sendBtn.disabled = true;
         chatInput.value = '';
 
+        // Add user message
         addMessage(query, 'user', null, new Date().toLocaleTimeString());
+
+        // Show typing indicator with context-specific message
         typingIndicator.classList.add('active');
+        const queryLower = query.toLowerCase();
+        let statusMessage = '🔍 Analyzing your query...';
+        
+        if (queryLower.includes('zone')) {
+            statusMessage = '📍 Investigating zone data...';
+        } else if (queryLower.includes('violation') || queryLower.includes('violations')) {
+            statusMessage = '🚨 Searching for violations...';
+        } else if (queryLower.includes('ppe') || queryLower.includes('compliance') || queryLower.includes('helmet') || queryLower.includes('vest')) {
+            statusMessage = '📊 Analyzing PPE compliance...';
+        } else if (queryLower.includes('manual') || queryLower.includes('policy') || queryLower.includes('procedure')) {
+            statusMessage = '📖 Searching documents...';
+        }
+        typingIndicator.innerHTML = statusMessage;
 
         try {
             const response = await fetch('/api/agent/query', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json'
+                },
                 body: JSON.stringify({ query: query })
             });
 
@@ -368,19 +391,33 @@
             typingIndicator.classList.remove('active');
 
             if (data.response) {
-                let sourceInfo = '<i class="fa-solid fa-robot"></i> VisionDesk Agent';
+                // Show what action was taken
+                let sourceInfo = '🤖 VisionDesk Agent';
+                if (data.action) {
+                    const actionLabels = {
+                        'zone_investigation': '📍 Zone Investigation',
+                        'recent_violations': '🚨 Violation Search',
+                        'ppe_compliance': '📊 PPE Analysis',
+                        'document_retrieval': '📖 Document Search',
+                        'general_query': '📋 Dashboard Overview'
+                    };
+                    sourceInfo += ` • ${actionLabels[data.action] || data.action}`;
+                }
+                
                 if (data.tool_results && data.tool_results.length > 0) {
                     const tools = data.tool_results.map(t => t.type).join(', ');
                     sourceInfo += ` • Tools: ${tools}`;
                 }
+                
                 if (data.incident_data && data.incident_data._id) {
                     sourceInfo += ` • Incident #${data.incident_data._id.slice(-6)}`;
                 }
+                
                 addMessage(data.response, 'agent', sourceInfo, new Date().toLocaleTimeString());
             } else if (data.error) {
                 addMessage('❌ Error: ' + data.error, 'agent');
             } else {
-                addMessage('❌ Sorry, I encountered an error processing your request.', 'agent');
+                addMessage('❌ No response received. Please try again.', 'agent');
             }
 
         } catch (error) {
@@ -388,78 +425,15 @@
             addMessage('❌ Error: ' + error.message, 'agent');
         }
 
+        // Re-enable input
         chatInput.disabled = false;
         sendBtn.disabled = false;
         chatInput.focus();
     }
 
+    // Auto-focus on page load
     chatInput.focus();
 </script>
-// Add this to rag_chat.html
-async function sendChat() {
-    const query = chatInput.value.trim();
-    if (!query) return;
-
-    chatInput.disabled = true;
-    sendBtn.disabled = true;
-    chatInput.value = '';
-
-    addMessage(query, 'user', null, new Date().toLocaleTimeString());
-    
-    typingIndicator.classList.add('active');
-    
-    // Show what the agent is doing
-    const queryLower = query.toLowerCase();
-    let statusMessage = '🔍 Analyzing your query...';
-    if (queryLower.includes('zone')) {
-        statusMessage = '📍 Investigating zone data...';
-    } else if (queryLower.includes('violation') || queryLower.includes('violations')) {
-        statusMessage = '🚨 Searching for violations...';
-    } else if (queryLower.includes('ppe') || queryLower.includes('compliance')) {
-        statusMessage = '📊 Analyzing PPE compliance...';
-    } else if (queryLower.includes('manual') || queryLower.includes('policy')) {
-        statusMessage = '📖 Searching documents...';
-    }
-    typingIndicator.innerHTML = statusMessage;
-
-    try {
-        const response = await fetch('/api/agent/query', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ query: query })
-        });
-
-        const data = await response.json();
-        typingIndicator.classList.remove('active');
-
-        if (data.response) {
-            // Show what action was taken
-            let sourceInfo = '🤖 VisionDesk Agent';
-            if (data.action) {
-                const actionLabels = {
-                    'zone_investigation': '📍 Zone Investigation',
-                    'recent_violations': '🚨 Violation Search',
-                    'ppe_compliance': '📊 PPE Analysis',
-                    'document_retrieval': '📖 Document Search',
-                    'general_query': '📋 Dashboard Overview'
-                };
-                sourceInfo += ` • ${actionLabels[data.action] || data.action}`;
-            }
-            
-            addMessage(data.response, 'agent', sourceInfo, new Date().toLocaleTimeString());
-        } else {
-            addMessage('❌ No response received. Please try again.', 'agent');
-        }
-
-    } catch (error) {
-        typingIndicator.classList.remove('active');
-        addMessage('❌ Error: ' + error.message, 'agent');
-    }
-
-    chatInput.disabled = false;
-    sendBtn.disabled = false;
-    chatInput.focus();
-}
 
 </body>
 </html>

@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings - VisionDesk</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        body { background: #0a0e1a; color: #e2e8f0; }
+        
+        .container { max-width: 900px; margin: 40px auto; padding: 0 24px; }
+        
+        .settings-header { margin-bottom: 32px; }
+        .settings-header h1 { font-size: 28px; font-weight: 700; color: #f1f5f9; }
+        .settings-header p { color: #94a3b8; margin-top: 4px; }
+        
+        .settings-card {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+        .settings-card h3 {
+            font-size: 16px;
+            font-weight: 600;
+            color: #f1f5f9;
+            margin-bottom: 16px;
+        }
+        .settings-card h3 i { margin-right: 10px; color: #a78bfa; }
+        
+        .setting-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .setting-item:last-child { border-bottom: none; }
+        
+        .setting-item .label { color: #94a3b8; font-size: 14px; }
+        .setting-item .value { color: #f1f5f9; font-size: 14px; font-weight: 500; }
+        
+        .toggle {
+            width: 48px;
+            height: 26px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 13px;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        .toggle.active { background: rgba(124, 58, 237, 0.5); }
+        .toggle .handle {
+            width: 20px;
+            height: 20px;
+            background: #94a3b8;
+            border-radius: 50%;
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            transition: all 0.3s ease;
+        }
+        .toggle.active .handle { left: 25px; background: #a78bfa; }
+        
+        .btn {
+            padding: 8px 20px;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 13px;
+        }
+        .btn-primary { background: linear-gradient(135deg, #7c3aed, #06b6d4); color: white; }
+        .btn-primary:hover { transform: scale(1.02); box-shadow: 0 8px 25px rgba(124,58,237,0.3); }
+        .btn-danger { background: rgba(239,68,68,0.2); color: #f87171; }
+        .btn-danger:hover { background: rgba(239,68,68,0.3); }
+        
+        .back-link {
+            color: #94a3b8;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+        .back-link:hover { color: #e2e8f0; }
+        
+        @media (max-width: 600px) {
+            .setting-item { flex-wrap: wrap; gap: 8px; }
+            .container { padding: 0 16px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/" class="back-link"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</a>
+        
+        <div class="settings-header">
+            <h1><i class="fa-solid fa-gear" style="color:#a78bfa;"></i> Settings</h1>
+            <p>Configure your VisionDesk AI preferences</p>
+        </div>
+
+        <!-- General Settings -->
+        <div class="settings-card">
+            <h3><i class="fa-solid fa-sliders"></i> General</h3>
+            <div class="setting-item">
+                <span class="label">Theme</span>
+                <span class="value">Dark <i class="fa-solid fa-moon" style="color:#a78bfa;"></i></span>
+            </div>
+            <div class="setting-item">
+                <span class="label">Language</span>
+                <span class="value">English</span>
+            </div>
+        </div>
+
+        <!-- Notification Settings -->
+        <div class="settings-card">
+            <h3><i class="fa-regular fa-bell"></i> Notifications</h3>
+            <div class="setting-item">
+                <span class="label">Email Alerts</span>
+                <div class="toggle active" onclick="this.classList.toggle('active')">
+                    <div class="handle"></div>
+                </div>
+            </div>
+            <div class="setting-item">
+                <span class="label">Violation Alerts</span>
+                <div class="toggle active" onclick="this.classList.toggle('active')">
+                    <div class="handle"></div>
+                </div>
+            </div>
+            <div class="setting-item">
+                <span class="label">Weekly Reports</span>
+                <div class="toggle" onclick="this.classList.toggle('active')">
+                    <div class="handle"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- AI & Detection Settings -->
+        <div class="settings-card">
+            <h3><i class="fa-solid fa-brain"></i> AI & Detection</h3>
+            <div class="setting-item">
+                <span class="label">PPE Detection Confidence</span>
+                <span class="value">0.35</span>
+            </div>
+            <div class="setting-item">
+                <span class="label">Auto-Save Results</span>
+                <div class="toggle active" onclick="this.classList.toggle('active')">
+                    <div class="handle"></div>
+                </div>
+            </div>
+            <div class="setting-item">
+                <span class="label">Enable RAG</span>
+                <div class="toggle active" onclick="this.classList.toggle('active')">
+                    <div class="handle"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Data Management -->
+        <div class="settings-card">
+            <h3><i class="fa-solid fa-database"></i> Data Management</h3>
+            <div class="setting-item">
+                <span class="label">Auto-Delete Old Records</span>
+                <span class="value">30 days</span>
+            </div>
+            <div class="setting-item" style="border-bottom: none;">
+                <span class="label">Clear All Data</span>
+                <button class="btn btn-danger" onclick="if(confirm('Delete all data?')){showToast('Data cleared!','success');}">
+                    <i class="fa-solid fa-trash-can"></i> Clear
+                </button>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div style="display:flex;gap:12px;margin-top:8px;flex-wrap:wrap;">
+            <button class="btn btn-primary" onclick="showToast('Settings saved! ✅','success')">
+                <i class="fa-solid fa-check"></i> Save Settings
+            </button>
+            <button class="btn" style="background:rgba(255,255,255,0.05);color:#94a3b8;" onclick="showToast('Settings reset to default 🔄','info')">
+                <i class="fa-solid fa-rotate"></i> Reset Defaults
+            </button>
+        </div>
+    </div>
+
+    <script>
+        function showToast(msg, type='info') {
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+                position: fixed; top: 20px; right: 20px; padding: 14px 24px;
+                border-radius: 12px; color: white; font-weight: 500;
+                z-index: 9999; background: ${type === 'success' ? 'rgba(34,197,94,0.9)' : type === 'error' ? 'rgba(239,68,68,0.9)' : 'rgba(124,58,237,0.9)'};
+                border: 1px solid rgba(255,255,255,0.1);
+                box-shadow: 0 12px 40px rgba(0,0,0,0.4);
+                transform: translateX(120%); transition: transform 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+                max-width: 400px;
+            `;
+            toast.textContent = msg;
+            document.body.appendChild(toast);
+            setTimeout(() => { toast.style.transform = 'translateX(0)'; }, 100);
+            setTimeout(() => { toast.style.transform = 'translateX(120%)'; }, 3500);
+            setTimeout(() => { toast.remove(); }, 4000);
+        }
+    </script>
+</body>
+</html>

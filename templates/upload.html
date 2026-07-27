@@ -219,6 +219,7 @@
         .preview video {
             width: 100%;
             border-radius: 15px;
+            max-height: 420px;
         }
 
         .upload-btn {
@@ -234,47 +235,117 @@
             transition: .3s;
         }
 
-        .upload-btn:hover {
+        .upload-btn:hover:not(:disabled) {
             transform: translateY(-3px);
             box-shadow: 0 15px 35px rgba(37, 99, 235, .4);
         }
 
+        .upload-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
         .progress {
             margin-top: 25px;
-            height: 12px;
+            height: 20px;
             display: none;
+            border-radius: 10px;
+            overflow: hidden;
         }
 
         .progress-bar {
             font-weight: bold;
+            font-size: 12px;
+            line-height: 20px;
+            transition: width 0.5s ease;
         }
 
+        /* Enhanced Loading Screen */
         #loadingScreen {
             position: fixed;
             left: 0;
             top: 0;
             width: 100%;
             height: 100%;
-            background: rgba(5, 10, 20, .92);
+            background: rgba(5, 10, 20, .95);
             display: none;
             justify-content: center;
             align-items: center;
             z-index: 9999;
+            backdrop-filter: blur(10px);
         }
 
         .loader-box {
             text-align: center;
             color: white;
+            max-width: 500px;
+            padding: 20px;
+        }
+
+        .loader-box .spinner {
+            width: 80px;
+            height: 80px;
+            border: 4px solid rgba(37, 99, 235, 0.1);
+            border-top-color: #38bdf8;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
 
         .loader-box h3 {
-            margin-top: 20px;
-            font-size: 30px;
+            margin-top: 30px;
+            font-size: 28px;
+            background: linear-gradient(90deg, #2563eb, #06b6d4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
 
-        .loader-box p {
+        .loader-box .status-text {
             color: #94a3b8;
             margin-top: 10px;
+            font-size: 16px;
+        }
+
+        .loader-box .progress-container {
+            margin-top: 25px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 10px;
+            height: 8px;
+            overflow: hidden;
+        }
+
+        .loader-box .progress-bar-custom {
+            height: 100%;
+            background: linear-gradient(90deg, #2563eb, #06b6d4);
+            width: 0%;
+            transition: width 0.5s ease;
+            border-radius: 10px;
+        }
+
+        .loader-box .time-text {
+            color: #64748b;
+            font-size: 13px;
+            margin-top: 10px;
+        }
+
+        .loader-box .cancel-btn {
+            margin-top: 20px;
+            padding: 10px 30px;
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 10px;
+            color: #f87171;
+            cursor: pointer;
+            transition: 0.3s;
+            font-size: 14px;
+        }
+
+        .loader-box .cancel-btn:hover {
+            background: rgba(239, 68, 68, 0.3);
         }
 
         /* Document Info Box */
@@ -364,11 +435,15 @@
             </a>
             <a href="/upload-document">
                 <i class="fa-solid fa-file-pdf"></i>
-                📄 Documents
+                Documents
             </a>
             <a href="/search-knowledge">
                 <i class="fa-solid fa-magnifying-glass"></i>
-                🔍 Search Knowledge
+                Search Knowledge
+            </a>
+            <a href="/rag-chat">
+                <i class="fa-solid fa-comments"></i>
+                AI Chat
             </a>
             <a href="/logout">
                 <i class="fa-solid fa-right-from-bracket"></i>
@@ -412,7 +487,7 @@
                             <i class="fa-solid fa-cloud-arrow-up"></i>
                             <h2>Drag & Drop Media Files Here</h2>
                             <p>or Click to Browse</p>
-                            <div class="supported-formats">Supported: JPG, PNG, MP4, AVI, MOV</div>
+                            <div class="supported-formats">Supported: JPG, PNG, MP4, AVI, MOV (Max 50MB)</div>
                         </div>
                     </label>
                     <input type="file" name="file" id="fileInput" accept=".jpg,.jpeg,.png,.mp4,.avi,.mov" required>
@@ -420,10 +495,10 @@
                         <strong>Selected File:</strong> <span id="fileName"></span>
                     </div>
                     <div class="preview" id="preview"></div>
-                    <div class="progress">
+                    <div class="progress" id="uploadProgress">
                         <div class="progress-bar progress-bar-striped progress-bar-animated" style="width:0%;">0%</div>
                     </div>
-                    <button type="submit" class="upload-btn">
+                    <button type="submit" class="upload-btn" id="uploadBtn">
                         <i class="fa-solid fa-wand-magic-sparkles"></i> Analyze with AI
                     </button>
                 </form>
@@ -462,19 +537,120 @@
         </footer>
     </div>
 
-    <!-- Loading Screen -->
+    <!-- Enhanced Loading Screen -->
     <div id="loadingScreen">
         <div class="loader-box">
-            <div class="spinner-border text-info" style="width:4rem;height:4rem;" role="status"></div>
+            <div class="spinner"></div>
             <h3>Processing with VisionDesk AI</h3>
-            <p>Please wait...</p>
+            <p class="status-text" id="loadingStatus">Initializing AI detection...</p>
+            <div class="progress-container">
+                <div class="progress-bar-custom" id="loadingProgressBar"></div>
+            </div>
+            <p class="time-text" id="loadingTime">Elapsed: 0s</p>
+            <button class="cancel-btn" onclick="cancelUpload()">
+                <i class="fa-solid fa-xmark"></i> Cancel Processing
+            </button>
         </div>
     </div>
 
     <script>
+        // ==================== LOADING SCREEN CONTROLS ====================
+        let loadingTimer = null;
+        let elapsedSeconds = 0;
+        let loadingInterval = null;
+        let uploadCancelled = false;
+
+        function showLoadingScreen() {
+            const screen = document.getElementById('loadingScreen');
+            screen.style.display = 'flex';
+            elapsedSeconds = 0;
+            uploadCancelled = false;
+            
+            // Update status periodically
+            const statusMessages = [
+                'Initializing AI detection...',
+                'Loading YOLO model...',
+                'Analyzing video frames...',
+                'Detecting PPE equipment...',
+                'Processing results...',
+                'Almost done...'
+            ];
+            let msgIndex = 0;
+            
+            document.getElementById('loadingStatus').textContent = statusMessages[0];
+            document.getElementById('loadingProgressBar').style.width = '0%';
+            document.getElementById('loadingTime').textContent = 'Elapsed: 0s';
+            
+            // Update status every 3 seconds
+            loadingInterval = setInterval(() => {
+                elapsedSeconds++;
+                document.getElementById('loadingTime').textContent = `Elapsed: ${elapsedSeconds}s`;
+                
+                // Update progress (capped at 95% until complete)
+                const progress = Math.min(5 + (elapsedSeconds * 1.5), 95);
+                document.getElementById('loadingProgressBar').style.width = progress + '%';
+                
+                // Update status message
+                if (elapsedSeconds > 3 && msgIndex < statusMessages.length - 1) {
+                    msgIndex++;
+                    document.getElementById('loadingStatus').textContent = statusMessages[msgIndex];
+                }
+            }, 1000);
+            
+            // Auto-hide after 60 seconds (fallback)
+            loadingTimer = setTimeout(() => {
+                if (!uploadCancelled) {
+                    hideLoadingScreen();
+                    showToast('Processing taking longer than expected. Redirecting...', 'warning');
+                    window.location.href = '/';
+                }
+            }, 120000);
+        }
+
+        function hideLoadingScreen() {
+            const screen = document.getElementById('loadingScreen');
+            screen.style.display = 'none';
+            if (loadingInterval) clearInterval(loadingInterval);
+            if (loadingTimer) clearTimeout(loadingTimer);
+            document.getElementById('loadingProgressBar').style.width = '100%';
+            document.getElementById('loadingStatus').textContent = 'Complete!';
+        }
+
+        function cancelUpload() {
+            uploadCancelled = true;
+            hideLoadingScreen();
+            showToast('Upload cancelled by user', 'info');
+            // Reload the page to reset state
+            window.location.reload();
+        }
+
+        function showToast(message, type = 'info') {
+            // Simple toast notification
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 15px 25px;
+                border-radius: 12px;
+                color: white;
+                font-weight: 500;
+                z-index: 10000;
+                background: ${type === 'success' ? '#16a34a' : type === 'error' ? '#dc2626' : '#2563eb'};
+                box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+                animation: slideIn 0.5s ease;
+            `;
+            toast.innerHTML = `<i class="fa-solid ${type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-circle-xmark' : 'fa-info-circle'}"></i> ${message}`;
+            document.body.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transition = 'opacity 0.5s';
+                setTimeout(() => toast.remove(), 500);
+            }, 4000);
+        }
+
         // ==================== TAB SWITCHING ====================
         function switchTab(tab) {
-            // Update buttons
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
             if (tab === 'media') {
                 document.querySelector('.tab-btn:first-child').classList.add('active');
@@ -493,6 +669,9 @@
         const preview = document.getElementById("preview");
         const fileInfo = document.getElementById("fileInfo");
         const fileName = document.getElementById("fileName");
+        const uploadBtn = document.getElementById("uploadBtn");
+        const uploadProgress = document.getElementById("uploadProgress");
+        const progressBar = uploadProgress.querySelector(".progress-bar");
 
         dropArea.addEventListener("click", () => fileInput.click());
 
@@ -524,6 +703,17 @@
             preview.style.display = "block";
             preview.innerHTML = "";
 
+            // Check file size
+            if (file.size > 50 * 1024 * 1024) {
+                uploadBtn.disabled = true;
+                uploadBtn.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> File too large (Max 50MB)';
+                showToast('File too large! Maximum size is 50MB.', 'error');
+                return;
+            } else {
+                uploadBtn.disabled = false;
+                uploadBtn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> Analyze with AI';
+            }
+
             if (file.type.startsWith("image")) {
                 const img = document.createElement("img");
                 img.src = URL.createObjectURL(file);
@@ -532,22 +722,54 @@
                 const video = document.createElement("video");
                 video.src = URL.createObjectURL(file);
                 video.controls = true;
+                video.preload = "metadata";
                 preview.appendChild(video);
+                // Show video duration
+                video.addEventListener('loadedmetadata', function() {
+                    const duration = Math.round(this.duration);
+                    const minutes = Math.floor(duration / 60);
+                    const seconds = duration % 60;
+                    const durationText = minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
+                    document.querySelector('.file-info').innerHTML += 
+                        `<br><small style="color:#94a3b8;">Duration: ${durationText}</small>`;
+                });
             }
         }
 
-        document.getElementById("mediaUploadForm").addEventListener("submit", function() {
-            document.getElementById("loadingScreen").style.display = "flex";
-            const progress = document.querySelector("#mediaSection .progress");
-            const progressBar = progress.querySelector(".progress-bar");
-            progress.style.display = "flex";
+        document.getElementById("mediaUploadForm").addEventListener("submit", function(e) {
+            // Show loading screen with enhanced UI
+            showLoadingScreen();
+            
+            // Show progress bar
+            uploadProgress.style.display = "flex";
+            progressBar.style.width = "0%";
+            progressBar.innerHTML = "0%";
+            uploadBtn.disabled = true;
+            uploadBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processing...';
+            
+            // Animate progress bar
             let width = 0;
-            const timer = setInterval(function() {
-                width += 2;
-                progressBar.style.width = width + "%";
-                progressBar.innerHTML = width + "%";
-                if (width >= 100) clearInterval(timer);
-            }, 60);
+            const progressTimer = setInterval(function() {
+                if (uploadCancelled) {
+                    clearInterval(progressTimer);
+                    return;
+                }
+                width += 1;
+                if (width <= 95) {
+                    progressBar.style.width = width + "%";
+                    progressBar.innerHTML = width + "%";
+                }
+            }, 80);
+            
+            // The form will submit naturally, the loading screen will hide on redirect
+            // But we also set a fallback to hide after some time
+            setTimeout(() => {
+                if (!uploadCancelled) {
+                    clearInterval(progressTimer);
+                    progressBar.style.width = "100%";
+                    progressBar.innerHTML = "100%";
+                }
+            }, 30000);
         });
 
         // ==================== DOCUMENT UPLOAD ====================
@@ -556,6 +778,7 @@
         const docFileInfo = document.getElementById("docFileInfo");
         const docFileName = document.getElementById("docFileName");
         const docPreview = document.getElementById("docPreview");
+        const docUploadBtn = document.getElementById("docUploadBtn");
 
         docDropArea.addEventListener("click", () => docInput.click());
 
@@ -583,8 +806,21 @@
         function showDocPreview(file) {
             if (!file) return;
             docFileInfo.style.display = "block";
-            docFileName.innerHTML = file.name + " (" + (file.size / 1024 / 1024).toFixed(2) + " MB)";
+            const sizeMB = (file.size / 1024 / 1024).toFixed(2);
+            docFileName.innerHTML = file.name + " (" + sizeMB + " MB)";
             docPreview.style.display = "block";
+            
+            // Check file size
+            if (file.size > 50 * 1024 * 1024) {
+                docUploadBtn.disabled = true;
+                docUploadBtn.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> File too large (Max 50MB)';
+                showToast('File too large! Maximum size is 50MB.', 'error');
+                return;
+            } else {
+                docUploadBtn.disabled = false;
+                docUploadBtn.innerHTML = '<i class="fa-solid fa-brain"></i> Extract Knowledge';
+            }
+            
             docPreview.innerHTML = `
                 <div style="display: flex; align-items: center; gap: 15px;">
                     <i class="fa-solid fa-file-pdf" style="font-size: 40px; color: #38bdf8;"></i>
@@ -601,6 +837,7 @@
         // Document upload via AJAX
         document.getElementById("documentUploadForm").addEventListener("submit", async function(e) {
             e.preventDefault();
+            
             const formData = new FormData(this);
             const progress = document.getElementById("docProgress");
             const progressBar = progress.querySelector(".progress-bar");
@@ -609,6 +846,9 @@
             progress.style.display = "flex";
             uploadBtn.disabled = true;
             uploadBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processing...';
+
+            showLoadingScreen();
+            document.getElementById('loadingStatus').textContent = 'Extracting knowledge from document...';
 
             let width = 0;
             const timer = setInterval(function() {
@@ -630,6 +870,7 @@
                 progressBar.innerHTML = "100%";
 
                 if (result.success) {
+                    hideLoadingScreen();
                     docPreview.innerHTML = `
                         <div style="display: flex; align-items: center; gap: 15px;">
                             <i class="fa-solid fa-check-circle" style="font-size: 30px; color: #22c55e;"></i>
@@ -641,8 +882,10 @@
                             </div>
                         </div>
                     `;
+                    showToast('Document processed successfully!', 'success');
                     setTimeout(() => window.location.href = '/upload-document', 2000);
                 } else {
+                    hideLoadingScreen();
                     docPreview.innerHTML = `
                         <div style="display: flex; align-items: center; gap: 15px;">
                             <i class="fa-solid fa-circle-xmark" style="font-size: 30px; color: #dc2626;"></i>
@@ -651,9 +894,11 @@
                             </div>
                         </div>
                     `;
+                    showToast('Error: ' + result.error, 'error');
                 }
             } catch (error) {
                 clearInterval(timer);
+                hideLoadingScreen();
                 docPreview.innerHTML = `
                     <div style="display: flex; align-items: center; gap: 15px;">
                         <i class="fa-solid fa-circle-xmark" style="font-size: 30px; color: #dc2626;"></i>
@@ -662,20 +907,30 @@
                         </div>
                     </div>
                 `;
+                showToast('Upload failed: ' + error.message, 'error');
             } finally {
                 uploadBtn.disabled = false;
                 uploadBtn.innerHTML = '<i class="fa-solid fa-brain"></i> Extract Knowledge';
-                setTimeout(() => { progress.style.display = "none"; }, 2000);
+                setTimeout(() => { progress.style.display = "none"; }, 3000);
             }
         });
 
-        // Loading screen for document upload
-        document.getElementById("documentUploadForm").addEventListener("submit", function() {
-            document.getElementById("loadingScreen").style.display = "flex";
-            setTimeout(() => {
-                document.getElementById("loadingScreen").style.display = "none";
-            }, 30000);
+        // ==================== KEYBOARD SHORTCUTS ====================
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && document.getElementById('loadingScreen').style.display === 'flex') {
+                cancelUpload();
+            }
         });
+
+        // ==================== ADD CSS ANIMATIONS ====================
+        const styleSheet = document.createElement("style");
+        styleSheet.textContent = `
+            @keyframes slideIn {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+        `;
+        document.head.appendChild(styleSheet);
     </script>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
