@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat History - VisionDesk</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        body { background: #0a0e1a; color: #e2e8f0; }
+        
+        .container { max-width: 1000px; margin: 40px auto; padding: 0 24px; }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        .header h1 { font-size: 28px; font-weight: 700; }
+        .header h1 i { color: #a78bfa; margin-right: 12px; }
+        
+        .back-link {
+            color: #94a3b8;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .back-link:hover { color: #e2e8f0; }
+        
+        .sessions-sidebar {
+            float: left;
+            width: 250px;
+            margin-right: 24px;
+        }
+        .chat-content {
+            overflow: hidden;
+        }
+        
+        .session-item {
+            padding: 12px 16px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 8px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .session-item:hover,
+        .session-item.active {
+            background: rgba(124,58,237,0.15);
+            border-color: #7c3aed;
+        }
+        .session-item .session-name {
+            font-weight: 500;
+            font-size: 14px;
+        }
+        .session-item .session-preview {
+            font-size: 12px;
+            color: #94a3b8;
+            margin-top: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .session-item .session-time {
+            font-size: 11px;
+            color: #64748b;
+            margin-top: 4px;
+        }
+        
+        .message {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            max-width: 80%;
+        }
+        .message.user {
+            background: rgba(124,58,237,0.2);
+            margin-left: auto;
+        }
+        .message.agent {
+            background: rgba(255,255,255,0.06);
+        }
+        .message .msg-time {
+            font-size: 11px;
+            color: #64748b;
+            margin-top: 4px;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 0;
+            color: #64748b;
+        }
+        .empty-state i { font-size: 48px; display: block; margin-bottom: 16px; }
+        
+        .delete-btn {
+            padding: 4px 12px;
+            border: none;
+            border-radius: 6px;
+            background: rgba(239,68,68,0.15);
+            color: #f87171;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s ease;
+        }
+        .delete-btn:hover { background: rgba(239,68,68,0.3); }
+        
+        @media (max-width: 768px) {
+            .sessions-sidebar {
+                float: none;
+                width: 100%;
+                margin-right: 0;
+                margin-bottom: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/rag-chat" class="back-link"><i class="fa-solid fa-arrow-left"></i> Back to Chat</a>
+        
+        <div class="header">
+            <h1><i class="fa-solid fa-clock-rotate-left"></i> Chat History</h1>
+            <button class="delete-btn" onclick="deleteAllHistory()">
+                <i class="fa-solid fa-trash-can"></i> Clear All History
+            </button>
+        </div>
+        
+        <div class="sessions-sidebar" id="sessionsList">
+            <!-- Sessions loaded here -->
+        </div>
+        
+        <div class="chat-content" id="chatContent">
+            <div class="empty-state">
+                <i class="fa-solid fa-comments"></i>
+                <p>Select a chat session to view messages</p>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let currentSession = null;
+        
+        function loadSessions() {
+            fetch('/api/chat/sessions')
+                .then(r => r.json())
+                .then(data => {
+                    renderSessions(data);
+                });
+        }
+        
+        function renderSessions(sessions) {
+            const container = document.getElementById('sessionsList');
+            
+            if (!sessions || sessions.length === 0) {
+                container.innerHTML = `
+                    <div style="padding: 20px; color: #64748b; text-align: center;">
+                        <p>No chat sessions</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = sessions.map(session => `
+                <div class="session-item ${session._id === currentSession ? 'active' : ''}" 
+                     onclick="loadSession('${session._id}')">
+                    <div class="session-name">
+                        Session ${session._id.slice(-6)}
+                        <span style="font-size: 11px; color: #64748b;">
+                            (${session.message_count} messages)
+                        </span>
+                    </div>
+                    <div class="session-preview">${session.last_message || 'No messages'}</div>
+                    <div class="session-time">
+                        ${new Date(session.last_timestamp).toLocaleString()}
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function loadSession(sessionId) {
+            currentSession = sessionId;
+            loadSessions(); // Refresh active state
+            
+            fetch(`/api/chat/history/${sessionId}`)
+                .then(r => r.json())
+                .then(data => {
+                    renderMessages(data);
+                });
+        }
+        
+        function renderMessages(history) {
+            const container = document.getElementById('chatContent');
+            
+            if (!history || history.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fa-solid fa-inbox"></i>
+                        <p>No messages in this session</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = history.map(msg => `
+                <div class="message ${msg.sender}">
+                    <strong>${msg.sender === 'user' ? 'You' : 'VisionDesk'}</strong>
+                    <div>${msg.message}</div>
+                    <div class="msg-time">${new Date(msg.timestamp).toLocaleString()}</div>
+                </div>
+            `).join('');
+        }
+        
+        function deleteAllHistory() {
+            if (!confirm('Delete all chat history?')) return;
+            fetch('/api/chat/history', { method: 'DELETE' })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        loadSessions();
+                        document.getElementById('chatContent').innerHTML = `
+                            <div class="empty-state">
+                                <i class="fa-solid fa-comments"></i>
+                                <p>Chat history cleared</p>
+                            </div>
+                        `;
+                    }
+                });
+        }
+        
+        // Load sessions on page load
+        loadSessions();
+    </script>
+</body>
+</html>

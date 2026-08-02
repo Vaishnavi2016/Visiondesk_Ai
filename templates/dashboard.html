@@ -55,7 +55,7 @@
         .bg-animation .orb:nth-child(2) {
             width: 350px;
             height: 350px;
-            background: #06b6d4;
+            background: #10b981; /* Changed from blue to Emerald */
             bottom: -80px;
             left: -80px;
             animation-delay: -7s;
@@ -97,22 +97,22 @@
         .logo {
             display: flex;
             align-items: center;
-            gap: 14px;
+            justify-content: space-between;
             font-size: 26px;
             font-weight: 800;
             margin-bottom: 45px;
-            padding-left: 8px;
+            padding: 0 8px;
         }
 
         .logo i {
-            font-size: 36px;
-            background: linear-gradient(135deg, #7c3aed, #06b6d4);
+            font-size: 32px;
+            background: linear-gradient(135deg, #7c3aed, #10b981);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
 
         .logo span {
-            background: linear-gradient(135deg, #7c3aed, #06b6d4);
+            background: linear-gradient(135deg, #7c3aed, #10b981);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
@@ -133,6 +133,7 @@
             font-weight: 600;
         }
 
+        /* Repositioned icon to right side */
         .menu a {
             text-decoration: none;
             color: #94a3b8;
@@ -141,7 +142,7 @@
             transition: all 0.3s ease;
             display: flex;
             align-items: center;
-            gap: 14px;
+            justify-content: space-between;
             font-size: 14px;
             font-weight: 500;
             position: relative;
@@ -151,6 +152,7 @@
             width: 22px;
             text-align: center;
             font-size: 16px;
+            order: 2; /* Moved icons to the right */
         }
 
         .menu a:hover {
@@ -160,7 +162,7 @@
         }
 
         .menu a.active {
-            background: linear-gradient(135deg, rgba(124, 58, 237, 0.25), rgba(6, 182, 212, 0.15));
+            background: linear-gradient(135deg, rgba(124, 58, 237, 0.25), rgba(16, 185, 129, 0.15));
             color: #a78bfa;
             border: 1px solid rgba(124, 58, 237, 0.2);
         }
@@ -173,27 +175,27 @@
             transform: translateY(-50%);
             width: 3px;
             height: 24px;
-            background: linear-gradient(180deg, #7c3aed, #06b6d4);
+            background: linear-gradient(180deg, #7c3aed, #10b981);
             border-radius: 0 4px 4px 0;
         }
 
         .menu a.rag-link {
-            background: linear-gradient(135deg, rgba(124, 58, 237, 0.2), rgba(6, 182, 212, 0.1));
+            background: linear-gradient(135deg, rgba(124, 58, 237, 0.2), rgba(16, 185, 129, 0.1));
             border: 1px solid rgba(124, 58, 237, 0.25);
         }
 
         .menu a.rag-link:hover {
-            background: linear-gradient(135deg, rgba(124, 58, 237, 0.35), rgba(6, 182, 212, 0.2));
+            background: linear-gradient(135deg, rgba(124, 58, 237, 0.35), rgba(16, 185, 129, 0.2));
             transform: translateX(4px) scale(1.02);
         }
 
         .badge-new {
-            background: linear-gradient(135deg, #7c3aed, #06b6d4);
+            background: linear-gradient(135deg, #7c3aed, #10b981);
             color: white;
             font-size: 9px;
             padding: 2px 8px;
             border-radius: 20px;
-            margin-left: auto;
+            margin-right: 6px;
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.5px;
@@ -237,7 +239,7 @@
         }
 
         .header-left .highlight {
-            background: linear-gradient(135deg, #7c3aed, #06b6d4);
+            background: linear-gradient(135deg, #7c3aed, #10b981);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
@@ -248,6 +250,7 @@
             gap: 16px;
         }
 
+        /* Repositioned icon to the right inside input */
         .search-box {
             display: flex;
             align-items: center;
@@ -259,23 +262,25 @@
         }
 
         .search-box:focus-within {
-            border-color: rgba(124, 58, 237, 0.4);
-            box-shadow: 0 0 20px rgba(124, 58, 237, 0.1);
+            border-color: rgba(16, 185, 129, 0.5);
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.15);
         }
 
         .search-box i {
             color: #64748b;
             font-size: 14px;
+            order: 2;
         }
 
         .search-box input {
             background: transparent;
             border: none;
-            padding: 10px 12px;
+            padding: 10px 12px 10px 0;
             color: #e2e8f0;
             font-size: 14px;
             width: 220px;
             outline: none;
+            order: 1;
         }
 
         .search-box input::placeholder {
@@ -298,8 +303,8 @@
         }
 
         .notification-btn:hover {
-            background: rgba(124, 58, 237, 0.2);
-            border-color: rgba(124, 58, 237, 0.3);
+            background: rgba(16, 185, 129, 0.2);
+            border-color: rgba(16, 185, 129, 0.3);
             color: #e2e8f0;
         }
 
@@ -334,7 +339,7 @@
             width: 40px;
             height: 40px;
             border-radius: 10px;
-            background: linear-gradient(135deg, #7c3aed, #06b6d4);
+            background: linear-gradient(135deg, #7c3aed, #10b981);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -375,35 +380,43 @@
             transition: all 0.4s ease;
             position: relative;
             overflow: hidden;
+            display: flex;
+            flex-direction: column;
         }
 
         .stat-card:hover {
             transform: translateY(-4px);
-            border-color: rgba(124, 58, 237, 0.2);
+            border-color: rgba(16, 185, 129, 0.3);
             box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
         }
 
+        .stat-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
         .stat-card .stat-icon {
-            width: 48px;
-            height: 48px;
+            width: 44px;
+            height: 44px;
             border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 20px;
-            margin-bottom: 14px;
+            font-size: 18px;
         }
 
         .stat-card .stat-icon.purple { background: rgba(124, 58, 237, 0.2); color: #a78bfa; }
-        .stat-card .stat-icon.blue { background: rgba(6, 182, 212, 0.2); color: #22d3ee; }
+        .stat-card .stat-icon.emerald { background: rgba(16, 185, 129, 0.2); color: #34d399; }
         .stat-card .stat-icon.green { background: rgba(34, 197, 94, 0.2); color: #4ade80; }
         .stat-card .stat-icon.red { background: rgba(239, 68, 68, 0.2); color: #f87171; }
         .stat-card .stat-icon.orange { background: rgba(251, 146, 60, 0.2); color: #fb923c; }
         .stat-card .stat-icon.pink { background: rgba(236, 72, 153, 0.2); color: #f472b6; }
 
         .stat-card .stat-value {
-            font-size: 30px;
-            font-weight: 700;
+            font-size: 32px;
+            font-weight: 800;
             color: #f1f5f9;
             line-height: 1.2;
         }
@@ -425,7 +438,7 @@
         }
 
         .chart-card:hover {
-            border-color: rgba(124, 58, 237, 0.15);
+            border-color: rgba(16, 185, 129, 0.2);
         }
 
         .chart-card .chart-header {
@@ -441,11 +454,13 @@
             font-size: 18px;
             font-weight: 600;
             color: #f1f5f9;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
         .chart-card .chart-title i {
-            margin-right: 8px;
-            color: #a78bfa;
+            color: #34d399;
         }
 
         .chart-card .chart-subtitle {
@@ -509,7 +524,7 @@
         .compliance-meter .meter-status.warning { background: rgba(251, 146, 60, 0.15); color: #fb923c; }
         .compliance-meter .meter-status.danger { background: rgba(239, 68, 68, 0.15); color: #f87171; }
 
-        /* ===== RECORD CARDS (ENHANCED) ===== */
+        /* ===== RECORD CARDS ===== */
         .records-section {
             display: grid;
             grid-template-columns: 2fr 1fr;
@@ -533,7 +548,7 @@
 
         .record-card:hover {
             transform: translateX(4px);
-            border-color: rgba(124, 58, 237, 0.15);
+            border-color: rgba(16, 185, 129, 0.25);
         }
 
         .record-card.removing {
@@ -555,7 +570,7 @@
         }
 
         .record-card .record-thumb:hover {
-            border-color: #7c3aed;
+            border-color: #10b981;
             transform: scale(1.05);
         }
 
@@ -601,11 +616,10 @@
         }
 
         .record-card .record-details .pill.helmet i { color: #f59e0b; }
-        .record-card .record-details .pill.vest i { color: #3b82f6; }
-        .record-card .record-details .pill.mask i { color: #22d3ee; }
+        .record-card .record-details .pill.vest i { color: #10b981; }
+        .record-card .record-details .pill.mask i { color: #34d399; }
         .record-card .record-details .pill.worker i { color: #a78bfa; }
 
-        /* Violation highlight */
         .record-card .record-details .pill.violation {
             background: rgba(239, 68, 68, 0.15);
             border: 1px solid rgba(239, 68, 68, 0.2);
@@ -664,13 +678,16 @@
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
         .record-delete-btn:hover {
             background: rgba(239, 68, 68, 0.3);
         }
 
-        /* ===== IMAGE POPUP / LIGHTBOX ===== */
+        /* ===== LIGHTBOX ===== */
         .lightbox-overlay {
             display: none;
             position: fixed;
@@ -760,6 +777,7 @@
             gap: 10px;
         }
 
+        /* Icon position shifted to the right */
         .quick-action-btn {
             padding: 12px 16px;
             border-radius: 12px;
@@ -772,20 +790,20 @@
             transition: all 0.3s ease;
             display: flex;
             align-items: center;
-            gap: 10px;
-            text-align: left;
+            justify-content: space-between;
         }
 
         .quick-action-btn:hover {
-            background: rgba(124, 58, 237, 0.15);
-            border-color: rgba(124, 58, 237, 0.2);
+            background: rgba(16, 185, 129, 0.15);
+            border-color: rgba(16, 185, 129, 0.3);
             color: #e2e8f0;
             transform: translateY(-2px);
         }
 
-        .quick-action-btn i { font-size: 16px; width: 20px; text-align: center; }
+        .quick-action-btn i { font-size: 16px; order: 2; }
+        .quick-action-btn span { order: 1; }
         .quick-action-btn.purple i { color: #a78bfa; }
-        .quick-action-btn.blue i { color: #22d3ee; }
+        .quick-action-btn.emerald i { color: #34d399; }
         .quick-action-btn.green i { color: #4ade80; }
         .quick-action-btn.red i { color: #f87171; }
         .quick-action-btn.orange i { color: #fb923c; }
@@ -907,8 +925,8 @@
         }
 
         .toast.info {
-            background: rgba(124, 58, 237, 0.9);
-            border: 1px solid rgba(124, 58, 237, 0.3);
+            background: rgba(16, 185, 129, 0.9);
+            border: 1px solid rgba(16, 185, 129, 0.3);
         }
 
         /* ===== FOOTER ===== */
@@ -922,7 +940,7 @@
         }
 
         .footer span {
-            background: linear-gradient(135deg, #7c3aed, #06b6d4);
+            background: linear-gradient(135deg, #7c3aed, #10b981);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             font-weight: 600;
@@ -958,8 +976,8 @@
 
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: rgba(124, 58, 237, 0.3); border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: rgba(124, 58, 237, 0.5); }
+        ::-webkit-scrollbar-thumb { background: rgba(16, 185, 129, 0.3); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(16, 185, 129, 0.5); }
 
         .hamburger {
             display: none;
@@ -986,43 +1004,52 @@
     <!-- ===== SIDEBAR ===== -->
     <div class="sidebar" id="sidebar">
         <div class="logo">
+            <span>VisionDesk</span>
             <i class="fa-solid fa-brain"></i>
-            Vision<span>Desk</span>
         </div>
         <div class="menu">
             <div class="menu-label">Main</div>
             <a href="/" class="active">
-                <i class="fa-solid fa-chart-line"></i> Dashboard
+                <span>Dashboard</span>
+                <i class="fa-solid fa-chart-line"></i>
             </a>
             <a href="/upload-feed">
-                <i class="fa-solid fa-cloud-arrow-up"></i> Upload Media
+                <span>Upload Media</span>
+                <i class="fa-solid fa-cloud-arrow-up"></i>
             </a>
             <a href="/upload-document">
-                <i class="fa-solid fa-file-pdf"></i> Documents
+                <span>Documents</span>
                 <span class="badge-new">AI</span>
+                <i class="fa-solid fa-file-pdf"></i>
             </a>
             <a href="/search-knowledge">
-                <i class="fa-solid fa-magnifying-glass"></i> Search Knowledge
+                <span>Search Knowledge</span>
+                <i class="fa-solid fa-magnifying-glass"></i>
             </a>
             <a href="/rag-chat" class="rag-link">
-                <i class="fa-solid fa-comments"></i> AI Assistant
+                <span>AI Assistant</span>
                 <span class="badge-new">New</span>
+                <i class="fa-solid fa-comments"></i>
             </a>
 
             <div class="menu-label" style="margin-top:20px;">Reports</div>
             <a href="/export/pdf">
-                <i class="fa-solid fa-file-pdf"></i> Export Reports
+                <span>Export Reports</span>
+                <i class="fa-solid fa-file-pdf"></i>
             </a>
             <a href="#">
-                <i class="fa-solid fa-clock-rotate-left"></i> History
+                <span>History</span>
+                <i class="fa-solid fa-clock-rotate-left"></i>
             </a>
             <a href="/settings">
-                <i class="fa-solid fa-gear"></i> Settings
+                <span>Settings</span>
+                <i class="fa-solid fa-gear"></i>
             </a>
         </div>
         <div class="logout">
             <a href="/logout">
-                <i class="fa-solid fa-right-from-bracket"></i> Logout
+                <span>Logout</span>
+                <i class="fa-solid fa-right-from-bracket"></i>
             </a>
         </div>
     </div>
@@ -1040,8 +1067,8 @@
             </div>
             <div class="header-right">
                 <div class="search-box">
-                    <i class="fa-solid fa-search"></i>
                     <input type="text" placeholder="Search dashboard..." id="searchInput">
+                    <i class="fa-solid fa-search"></i>
                 </div>
                 <div class="notification-btn" onclick="showNotification()">
                     <i class="fa-regular fa-bell"></i>
@@ -1060,39 +1087,51 @@
         <!-- ===== STATS ===== -->
         <div class="stats-grid" id="statsGrid">
             <div class="stat-card">
-                <div class="stat-icon purple"><i class="fa-solid fa-folder-open"></i></div>
+                <div class="stat-card-header">
+                    <div class="stat-label">Total Audits</div>
+                    <div class="stat-icon purple"><i class="fa-solid fa-folder-open"></i></div>
+                </div>
                 <div class="stat-value counter" id="statTotal">0</div>
-                <div class="stat-label">Total Audits</div>
             </div>
 
             <div class="stat-card">
-                <div class="stat-icon red"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                <div class="stat-card-header">
+                    <div class="stat-label">Violations</div>
+                    <div class="stat-icon red"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                </div>
                 <div class="stat-value counter" id="statViolations">0</div>
-                <div class="stat-label">Violations</div>
             </div>
 
             <div class="stat-card">
-                <div class="stat-icon green"><i class="fa-solid fa-circle-check"></i></div>
+                <div class="stat-card-header">
+                    <div class="stat-label">Safe Records</div>
+                    <div class="stat-icon green"><i class="fa-solid fa-circle-check"></i></div>
+                </div>
                 <div class="stat-value counter" id="statSafe">0</div>
-                <div class="stat-label">Safe Records</div>
             </div>
 
             <div class="stat-card">
-                <div class="stat-icon blue"><i class="fa-solid fa-shield-halved"></i></div>
+                <div class="stat-card-header">
+                    <div class="stat-label">Compliance Rate</div>
+                    <div class="stat-icon emerald"><i class="fa-solid fa-shield-halved"></i></div>
+                </div>
                 <div class="stat-value counter" id="statCompliance">0%</div>
-                <div class="stat-label">Compliance Rate</div>
             </div>
 
             <div class="stat-card">
-                <div class="stat-icon pink"><i class="fa-solid fa-file-pdf"></i></div>
+                <div class="stat-card-header">
+                    <div class="stat-label">Documents</div>
+                    <div class="stat-icon pink"><i class="fa-solid fa-file-pdf"></i></div>
+                </div>
                 <div class="stat-value counter" id="docCount">0</div>
-                <div class="stat-label">Documents</div>
             </div>
 
-            <div class="stat-card" style="border-color: rgba(124, 58, 237, 0.2);">
-                <div class="stat-icon orange"><i class="fa-solid fa-brain"></i></div>
+            <div class="stat-card" style="border-color: rgba(16, 185, 129, 0.2);">
+                <div class="stat-card-header">
+                    <div class="stat-label">Knowledge Chunks</div>
+                    <div class="stat-icon orange"><i class="fa-solid fa-brain"></i></div>
+                </div>
                 <div class="stat-value counter" id="ragChunks">0</div>
-                <div class="stat-label">Knowledge Chunks</div>
             </div>
         </div>
 
@@ -1135,7 +1174,7 @@
             </div>
         </div>
 
-        <!-- ===== RECENT RECORDS (ENHANCED) ===== -->
+        <!-- ===== RECENT RECORDS ===== -->
         <div class="records-section">
             <div class="chart-card">
                 <div class="chart-header">
@@ -1144,7 +1183,8 @@
                         <div class="chart-subtitle">Click on any image to view in full size</div>
                     </div>
                     <button class="record-delete-btn" onclick="confirmDeleteAll()">
-                        <i class="fa-solid fa-trash-can"></i> Delete All
+                        <span>Delete All</span>
+                        <i class="fa-solid fa-trash-can"></i>
                     </button>
                 </div>
 
@@ -1225,24 +1265,29 @@
                 </div>
 
                 <div class="quick-actions">
-                    <a href="/upload-feed" class="quick-action-btn blue">
-                        <i class="fa-solid fa-cloud-arrow-up"></i> Upload Media
+                    <a href="/upload-feed" class="quick-action-btn emerald">
+                        <span>Upload Media</span>
+                        <i class="fa-solid fa-cloud-arrow-up"></i>
                     </a>
                     <a href="/upload-document" class="quick-action-btn purple">
-                        <i class="fa-solid fa-file-pdf"></i> Upload Document
+                        <span>Upload Document</span>
+                        <i class="fa-solid fa-file-pdf"></i>
                     </a>
                     <a href="/rag-chat" class="quick-action-btn pink" style="grid-column: span 2;">
-                        <i class="fa-solid fa-comments"></i> Ask AI Assistant
-                        <span style="margin-left:auto;font-size:11px;background:rgba(124,58,237,0.2);padding:2px 12px;border-radius:20px;color:#a78bfa;">New</span>
+                        <span>Ask AI Assistant</span>
+                        <i class="fa-solid fa-comments"></i>
                     </a>
                     <a href="/export/pdf" class="quick-action-btn red">
-                        <i class="fa-solid fa-file-pdf"></i> Compliance Report
+                        <span>Compliance Report</span>
+                        <i class="fa-solid fa-file-pdf"></i>
                     </a>
                     <a href="/export-knowledge-pdf" class="quick-action-btn orange">
-                        <i class="fa-solid fa-book"></i> Knowledge Report
+                        <span>Knowledge Report</span>
+                        <i class="fa-solid fa-book"></i>
                     </a>
                     <a href="/settings" class="quick-action-btn green" style="grid-column: span 2;">
-                        <i class="fa-solid fa-gear"></i> Settings
+                        <span>Settings</span>
+                        <i class="fa-solid fa-gear"></i>
                     </a>
                 </div>
 
@@ -1333,7 +1378,6 @@
             const video = document.getElementById('lightboxVideo');
             const info = document.getElementById('lightboxInfo');
             
-            // Check if it's a video
             const isVideo = element.tagName === 'VIDEO' || (element.src && element.src.match(/\.(mp4|avi|mov|webm)/i));
             
             if (isVideo) {
@@ -1347,14 +1391,12 @@
                 img.style.display = 'block';
                 video.style.display = 'none';
                 img.src = element.src;
-                // If it's a thumbnail from a video, try to get the video source
                 if (element.src && element.src.includes('processed')) {
                     const videoSrc = element.src.replace(/\.jpg|\.png|\.jpeg/, '.mp4');
                     video.src = videoSrc;
                 }
             }
             
-            // Update info
             document.getElementById('lbFileName').textContent = fileName || 'Unknown File';
             
             const statusEl = document.getElementById('lbStatus');
@@ -1392,7 +1434,6 @@
             overlay.classList.remove('active');
             document.body.style.overflow = '';
             
-            // Stop video
             const video = document.getElementById('lightboxVideo');
             if (video) {
                 video.pause();
@@ -1400,7 +1441,6 @@
             }
         }
 
-        // Close lightbox with Escape key
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
                 closeLightbox();
@@ -1432,7 +1472,6 @@
                 return data;
             } catch (error) {
                 console.log('Error fetching compliance stats:', error);
-                // Set default values if API fails
                 document.getElementById('statTotal').textContent = '0';
                 document.getElementById('statViolations').textContent = '0';
                 document.getElementById('statSafe').textContent = '0';
@@ -1640,7 +1679,6 @@
             });
         });
 
-        // ===== REFRESH STATS EVERY 30 SECONDS =====
         setInterval(fetchComplianceStats, 30000);
         setInterval(fetchRAGStats, 30000);
     </script>

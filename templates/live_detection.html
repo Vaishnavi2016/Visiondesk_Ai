@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Live Detection - VisionDesk</title>
+    <style>
+        body { background: #0a0e1a; color: white; font-family: Arial, sans-serif; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .video-container { display: flex; justify-content: center; margin: 20px 0; }
+        .video-container img { max-width: 100%; border-radius: 10px; border: 2px solid #2563eb; }
+        .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; }
+        .stat-card { background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; text-align: center; }
+        .stat-value { font-size: 28px; font-weight: bold; color: #38bdf8; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎥 Live PPE Detection</h1>
+        <div class="video-container">
+            <img src="{{ url_for('video_feed') }}" alt="Live Feed">
+        </div>
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-value" id="workers">0</div>
+                <div>Workers</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="helmets" style="color: #f59e0b;">0</div>
+                <div>Helmets</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="vests" style="color: #3b82f6;">0</div>
+                <div>Vests</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="masks" style="color: #22d3ee;">0</div>
+                <div>Masks</div>
+            </div>
+        </div>
+        <a href="/" style="color: #38bdf8; text-decoration: none;">← Back to Dashboard</a>
+    </div>
+    <script>
+        // Auto-refresh stats every 2 seconds
+        setInterval(() => {
+            fetch('/api/compliance-stats')
+                .then(r => r.json())
+                .then(data => {
+                    // Update stats if available
+                })
+                .catch(() => {});
+        }, 2000);
+    </script>
+</body>
+</html>

@@ -338,189 +338,174 @@ font-weight:600;
 text-decoration:underline;
 
 }
-
-</style>
-
+ .password-hint {
+            font-size: 12px;
+            color: #94a3b8;
+            margin-top: 5px;
+        }
+        .password-hint ul {
+            margin: 5px 0 0 20px;
+            padding: 0;
+        }
+        .password-hint li {
+            list-style: none;
+            font-size: 12px;
+            color: #64748b;
+        }
+        .password-hint li.valid {
+            color: #22c55e;
+        }
+        .password-hint li.invalid {
+            color: #ef4444;
+        }
+    </style>
 </head>
-
 <body>
-
-<div class="card-register">
-
-<div class="logo">
-
-<i class="fa-solid fa-user-plus"></i>
-
-</div>
-
-<h2>
-
-Create Account
-
-</h2>
-
-<div class="subtitle">
-
-VisionDesk AI Registration Portal
-
-</div>
-
-<form method="POST">
-
-<div class="input-group">
-
-<i class="fa-solid fa-user"></i>
-
-<input
-
-type="text"
-
-name="username"
-
-class="form-control"
-
-placeholder="Username"
-
-required>
-
-</div>
-
-<div class="input-group">
-
-<i class="fa-solid fa-lock"></i>
-
-<input
-
-type="password"
-
-id="password"
-
-name="password"
-
-class="form-control"
-
-placeholder="Password"
-
-required>
-
-<i
-
-class="fa-solid fa-eye eye"
-
-onclick="togglePassword()">
-
-</i>
-
-<div class="strength">
-
-<div class="bar" id="bar"></div>
-
-</div>
-
-</div>
-
-<button
-
-class="btn-register">
-
-<i class="fa-solid fa-user-check"></i>
-
-Register Account
-
-</button>
-
-</form>
-
-<div class="footer">
-
-Already have an account?
-
-<a href="/login">
-
-Login
-
-</a>
-
-</div>
-
-</div>
-
-<script>
-function togglePassword() {
-    const password = document.getElementById("password");
-    const eye = document.querySelector(".eye");
-
-    if (password.type === "password") {
-        password.type = "text";
-        eye.classList.remove("fa-eye");
-        eye.classList.add("fa-eye-slash");
-    } else {
-        password.type = "password";
-        eye.classList.remove("fa-eye-slash");
-        eye.classList.add("fa-eye");
-    }
-}
-
-const passwordInput = document.getElementById("password");
-const bar = document.getElementById("bar");
-
-passwordInput.addEventListener("keyup", function () {
-
-    let value = passwordInput.value;
-    let strength = 0;
-
-    if (value.length >= 8) strength++;
-    if (/[A-Z]/.test(value)) strength++;
-    if (/[0-9]/.test(value)) strength++;
-    if (/[^A-Za-z0-9]/.test(value)) strength++;
-
-    switch (strength) {
-        case 0:
-            bar.style.width = "0%";
-            break;
-
-        case 1:
-            bar.style.width = "25%";
-            bar.style.background = "#ef4444";
-            break;
-
-        case 2:
-            bar.style.width = "50%";
-            bar.style.background = "#f59e0b";
-            break;
-
-        case 3:
-            bar.style.width = "75%";
-            bar.style.background = "#3b82f6";
-            break;
-
-        case 4:
-            bar.style.width = "100%";
-            bar.style.background = "#22c55e";
-            break;
-    }
-});
-
-// Add password strength indicator label
-const strengthLabels = ['Very Weak', 'Weak', 'Medium', 'Strong', 'Very Strong'];
-const strengthColors = ['#ef4444', '#f59e0b', '#f59e0b', '#3b82f6', '#22c55e'];
-
-passwordInput.addEventListener("keyup", function () {
-    let value = passwordInput.value;
-    let strength = 0;
-
-    if (value.length >= 8) strength++;
-    if (/[A-Z]/.test(value)) strength++;
-    if (/[0-9]/.test(value)) strength++;
-    if (/[^A-Za-z0-9]/.test(value)) strength++;
-
-    const bar = document.getElementById("bar");
-    bar.style.width = (strength * 25) + "%";
-    bar.style.background = strengthColors[strength];
-});
-</script>
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-
+    <div class="card-register">
+        <div class="logo">
+            <i class="fa-solid fa-user-plus"></i>
+        </div>
+        <h2>Create Account</h2>
+        <div class="subtitle">VisionDesk AI Registration Portal</div>
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else 'success' if category == 'success' else 'info' }}" style="border-radius: 12px; margin-bottom: 15px;">
+                        <i class="fa-solid fa-{{ 'circle-exclamation' if category == 'error' else 'check-circle' if category == 'success' else 'info-circle' }}"></i>
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <form method="POST" action="{{ url_for('register') }}">
+            <!-- CSRF Token -->
+            <input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">
+
+            <!-- Username Field -->
+            <div class="input-group">
+                <i class="fa-solid fa-user"></i>
+                <input type="text" name="username" class="form-control" 
+                       placeholder="Username (letters, numbers, underscore)"
+                       value="{{ form.username.data if form.username.data else '' }}"
+                       pattern="[a-zA-Z0-9_]+"
+                       title="Only letters, numbers, and underscores allowed"
+                       required>
+            </div>
+
+            <!-- Email Field -->
+            <div class="input-group">
+                <i class="fa-solid fa-envelope"></i>
+                <input type="email" name="email" class="form-control" 
+                       placeholder="Email Address"
+                       value="{{ form.email.data if form.email.data else '' }}"
+                       required>
+            </div>
+
+            <!-- Password Field -->
+            <div class="input-group">
+                <i class="fa-solid fa-lock"></i>
+                <input type="password" id="password" name="password" 
+                       class="form-control" placeholder="Password" 
+                       required minlength="8">
+                <i class="fa-solid fa-eye eye" onclick="togglePassword()"></i>
+                <div class="strength">
+                    <div class="bar" id="bar"></div>
+                </div>
+            </div>
+
+            <!-- Password Strength Hints -->
+            <div class="password-hint" id="passwordHints">
+                <ul>
+                    <li id="hint-length">❌ At least 8 characters</li>
+                    <li id="hint-upper">❌ At least one uppercase letter</li>
+                    <li id="hint-lower">❌ At least one lowercase letter</li>
+                    <li id="hint-number">❌ At least one number</li>
+                    <li id="hint-special">❌ At least one special character</li>
+                </ul>
+            </div>
+
+            <!-- Confirm Password Field -->
+            <div class="input-group" style="margin-top: 10px;">
+                <i class="fa-solid fa-lock"></i>
+                <input type="password" name="confirm_password" 
+                       class="form-control" placeholder="Confirm Password" 
+                       required>
+            </div>
+
+            <button class="btn-register" type="submit">
+                <i class="fa-solid fa-user-check"></i>
+                Register Account
+            </button>
+        </form>
+
+        <div class="footer">
+            Already have an account?
+            <a href="{{ url_for('login') }}">Login</a>
+        </div>
+    </div>
+
+    <script>
+        // Password toggle
+        function togglePassword() {
+            const password = document.getElementById("password");
+            const eye = document.querySelector(".eye");
+            if (password.type === "password") {
+                password.type = "text";
+                eye.classList.remove("fa-eye");
+                eye.classList.add("fa-eye-slash");
+            } else {
+                password.type = "password";
+                eye.classList.remove("fa-eye-slash");
+                eye.classList.add("fa-eye");
+            }
+        }
+
+        // Password strength and validation
+        const passwordInput = document.getElementById("password");
+        const bar = document.getElementById("bar");
+
+        const hints = {
+            length: document.getElementById("hint-length"),
+            upper: document.getElementById("hint-upper"),
+            lower: document.getElementById("hint-lower"),
+            number: document.getElementById("hint-number"),
+            special: document.getElementById("hint-special")
+        };
+
+        passwordInput.addEventListener("keyup", function() {
+            const value = this.value;
+            let strength = 0;
+            
+            // Check requirements
+            const checks = {
+                length: value.length >= 8,
+                upper: /[A-Z]/.test(value),
+                lower: /[a-z]/.test(value),
+                number: /[0-9]/.test(value),
+                special: /[^A-Za-z0-9]/.test(value)
+            };
+            
+            // Update hints
+            for (const [key, passed] of Object.entries(checks)) {
+                const el = hints[key];
+                if (passed) {
+                    el.className = 'valid';
+                    el.textContent = el.textContent.replace('❌', '✅');
+                    strength++;
+                } else {
+                    el.className = 'invalid';
+                    el.textContent = el.textContent.replace('✅', '❌');
+                }
+            }
+            
+            // Update progress bar
+            bar.style.width = (strength * 20) + '%';
+            const colors = ['', '#ef4444', '#f59e0b', '#f59e0b', '#3b82f6', '#22c55e'];
+            bar.style.background = colors[strength] || '#ef4444';
+        });
+    </script>
 </body>
 </html>
