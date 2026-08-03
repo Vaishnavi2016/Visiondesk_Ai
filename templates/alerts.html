@@ -8,34 +8,18 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
-        body { background: #0a0e1a; color: #e2e8f0; overflow-x: hidden; }
-
-        :root {
-            --primary-gradient: linear-gradient(135deg, #7c3aed 0%, #f59e0b 100%);
-            --accent-purple: #a78bfa;
-            --accent-yellow: #fb923c;
-            --card-bg: rgba(255, 255, 255, 0.04);
-            --border-color: rgba(255, 255, 255, 0.06);
-        }
-
+        body { background: #0a0e1a; color: #e2e8f0; }
+        
         .container { max-width: 1200px; margin: 40px auto; padding: 0 24px; }
-
+        
         .header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 30px;
-            flex-wrap: wrap;
-            gap: 16px;
         }
-        .header h1 { 
-            font-size: 28px; 
-            font-weight: 700; 
-            display: flex; 
-            align-items: center; 
-            gap: 12px; 
-        }
-        .header h1 i { color: #f87171; order: 2; }
+        .header h1 { font-size: 28px; font-weight: 700; }
+        .header h1 i { color: #f87171; margin-right: 12px; }
         
         .alert-filters {
             display: flex;
@@ -45,41 +29,35 @@
         }
         .filter-btn {
             padding: 8px 20px;
-            border: 1px solid var(--border-color);
+            border: 1px solid rgba(255,255,255,0.1);
             border-radius: 20px;
-            background: rgba(255, 255, 255, 0.03);
+            background: transparent;
             color: #94a3b8;
             cursor: pointer;
             transition: all 0.3s ease;
-            font-weight: 500;
         }
         .filter-btn:hover,
         .filter-btn.active {
             background: rgba(124, 58, 237, 0.2);
-            border-color: var(--accent-purple);
+            border-color: #7c3aed;
             color: white;
-            transform: translateY(-2px);
         }
-
+        
         .alert-card {
-            background: var(--card-bg);
-            backdrop-filter: blur(12px);
-            border: 1px solid var(--border-color);
-            border-radius: 16px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 12px;
             padding: 20px;
             margin-bottom: 16px;
             transition: all 0.3s ease;
             border-left: 4px solid #f87171;
         }
         .alert-card.resolved {
-            border-left-color: #fb923c;
+            border-left-color: #4ade80;
             opacity: 0.6;
         }
-        .alert-card:hover { 
-            transform: translateX(4px); 
-            border-color: rgba(245, 158, 11, 0.3);
-        }
-
+        .alert-card:hover { transform: translateX(4px); }
+        
         .alert-header {
             display: flex;
             justify-content: space-between;
@@ -89,11 +67,7 @@
         .alert-title {
             font-weight: 600;
             font-size: 16px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
         }
-        .alert-title i { order: 2; }
         .alert-time {
             color: #94a3b8;
             font-size: 13px;
@@ -105,65 +79,47 @@
             margin: 8px 0;
         }
         .violation-tag {
-            background: rgba(239, 68, 68, 0.15);
+            background: rgba(239,68,68,0.15);
             color: #f87171;
             padding: 4px 12px;
             border-radius: 12px;
             font-size: 12px;
-            font-weight: 500;
         }
         .alert-actions {
             display: flex;
             gap: 12px;
             margin-top: 12px;
         }
-        .resolve-btn, .delete-btn {
-            padding: 8px 18px;
+        .resolve-btn {
+            padding: 6px 16px;
             border: none;
-            border-radius: 10px;
+            border-radius: 8px;
+            background: rgba(34,197,94,0.2);
+            color: #4ade80;
             cursor: pointer;
             transition: all 0.3s ease;
-            font-size: 13px;
-            font-weight: 600;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
         }
-        .resolve-btn i, .delete-btn i { order: 2; }
-        
-        .resolve-btn {
-            background: rgba(245, 158, 11, 0.15);
-            color: #fb923c;
-            border: 1px solid rgba(245, 158, 11, 0.3);
-        }
-        .resolve-btn:hover { 
-            background: var(--primary-gradient); 
-            color: white; 
-            transform: translateY(-2px);
-        }
-        
+        .resolve-btn:hover { background: rgba(34,197,94,0.3); }
         .delete-btn {
+            padding: 6px 16px;
+            border: none;
+            border-radius: 8px;
             background: rgba(239,68,68,0.15);
             color: #f87171;
-            border: 1px solid rgba(239, 68, 68, 0.3);
+            cursor: pointer;
+            transition: all 0.3s ease;
         }
-        .delete-btn:hover { 
-            background: rgba(239,68,68,0.3); 
-            transform: translateY(-2px);
-        }
-
+        .delete-btn:hover { background: rgba(239,68,68,0.3); }
+        
         .back-link {
             color: #94a3b8;
             text-decoration: none;
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            margin-bottom: 20px;
-            transition: 0.3s;
         }
-        .back-link i { order: 2; }
-        .back-link:hover { color: var(--accent-yellow); }
-
+        .back-link:hover { color: #e2e8f0; }
+        
         .toast {
             position: fixed;
             top: 20px;
@@ -176,26 +132,25 @@
             transform: translateX(120%);
             transition: transform 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
             max-width: 400px;
-            backdrop-filter: blur(12px);
         }
         .toast.show { transform: translateX(0); }
-        .toast.success { background: rgba(245, 158, 11, 0.9); }
+        .toast.success { background: rgba(34,197,94,0.9); }
         .toast.error { background: rgba(239,68,68,0.9); }
         .toast.info { background: rgba(124,58,237,0.9); }
     </style>
 </head>
 <body>
     <div class="container">
-        <a href="/" class="back-link"><span>Back to Dashboard</span> <i class="fa-solid fa-arrow-left"></i></a>
+        <a href="/" class="back-link"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</a>
         
         <div class="header">
-            <h1>Violation Alerts <i class="fa-solid fa-bell"></i></h1>
+            <h1><i class="fa-solid fa-bell"></i> Violation Alerts</h1>
             <div style="display: flex; gap: 12px;">
                 <button class="resolve-btn" onclick="resolveAllAlerts()">
-                    <span>Resolve All</span> <i class="fa-solid fa-check-double"></i>
+                    <i class="fa-solid fa-check-double"></i> Resolve All
                 </button>
                 <button class="delete-btn" onclick="deleteAllAlerts()">
-                    <span>Delete All</span> <i class="fa-solid fa-trash-can"></i>
+                    <i class="fa-solid fa-trash-can"></i> Delete All
                 </button>
             </div>
         </div>
@@ -208,6 +163,7 @@
         </div>
         
         <div id="alertsContainer">
+            <!-- Alerts will be loaded here -->
             <div style="text-align: center; padding: 60px 0; color: #64748b;">
                 <i class="fa-solid fa-inbox" style="font-size: 48px; display: block; margin-bottom: 16px;"></i>
                 <p>No alerts found</p>
@@ -218,21 +174,26 @@
     <script>
         let currentFilter = 'all';
         
+        // Load alerts
         function loadAlerts() {
             fetch('/api/alerts')
                 .then(r => r.json())
-                .then(data => renderAlerts(data))
+                .then(data => {
+                    renderAlerts(data);
+                })
                 .catch(() => {});
         }
         
         function renderAlerts(alerts) {
             const container = document.getElementById('alertsContainer');
+            
             if (!alerts || alerts.length === 0) {
                 container.innerHTML = `
                     <div style="text-align: center; padding: 60px 0; color: #64748b;">
                         <i class="fa-solid fa-inbox" style="font-size: 48px; display: block; margin-bottom: 16px;"></i>
                         <p>No alerts found</p>
-                    </div>`;
+                    </div>
+                `;
                 return;
             }
             
@@ -240,11 +201,14 @@
                 <div class="alert-card ${alert.resolved ? 'resolved' : ''}" data-id="${alert._id}">
                     <div class="alert-header">
                         <div class="alert-title">
-                            ${alert.violations.join(', ')} ${alert.resolved ? '✅' : ''}
                             <i class="fa-solid fa-${alert.severity >= 3 ? 'circle-exclamation' : 'triangle-exclamation'}" 
                                style="color: ${alert.severity >= 3 ? '#ef4444' : '#fb923c'};"></i>
+                            ${alert.violations.join(', ')}
+                            ${alert.resolved ? '✅' : ''}
                         </div>
-                        <div class="alert-time">${new Date(alert.created_at).toLocaleString()}</div>
+                        <div class="alert-time">
+                            ${new Date(alert.created_at).toLocaleString()}
+                        </div>
                     </div>
                     <div class="alert-violations">
                         ${alert.violations.map(v => `<span class="violation-tag">${v}</span>`).join('')}
@@ -255,12 +219,13 @@
                     ${!alert.resolved ? `
                         <div class="alert-actions">
                             <button class="resolve-btn" onclick="resolveAlert('${alert._id}')">
-                                <span>Resolve</span> <i class="fa-solid fa-check"></i>
+                                <i class="fa-solid fa-check"></i> Resolve
                             </button>
                             <button class="delete-btn" onclick="deleteAlert('${alert._id}')">
-                                <span>Delete</span> <i class="fa-solid fa-trash-can"></i>
+                                <i class="fa-solid fa-trash-can"></i> Delete
                             </button>
-                        </div>` : ''}
+                        </div>
+                    ` : ''}
                 </div>
             `).join('');
         }
@@ -312,6 +277,7 @@
                 });
         }
         
+        // Toast
         function showToast(message, type = 'info') {
             const toast = document.createElement('div');
             toast.className = `toast ${type}`;
@@ -324,15 +290,20 @@
             }, 3000);
         }
         
+        // Filters
         document.querySelectorAll('.filter-btn').forEach(btn => {
             btn.addEventListener('click', function() {
                 document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
                 this.classList.add('active');
                 currentFilter = this.dataset.filter;
+                // Implement filtering
             });
         });
         
+        // Load alerts on page load
         loadAlerts();
+        
+        // Refresh every 30 seconds
         setInterval(loadAlerts, 30000);
     </script>
 </body>
