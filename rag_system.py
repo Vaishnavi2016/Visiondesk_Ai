@@ -148,28 +148,40 @@ class RAGSystem:
             query_vec = self.vectorizer.transform([query])
             similarities = cosine_similarity(query_vec, self.doc_vectors).flatten()
             
-            top_indices = similarities.argsort()[-top_k:][::-1]
-            
+            # Search a wider pool so we still have enough candidates after removing duplicates
+            top_indices = similarities.argsort()[-(top_k * 4):][::-1]
+
             results = []
+            seen_text = set()
             for idx in top_indices:
-                if similarities[idx] > 0.01:
-                    results.append({
-                        'text': self.documents[idx]['text'],
-                        'metadata': self.documents[idx]['metadata'],
-                        'score': float(similarities[idx]),
-                        'chunk_id': self.documents[idx]['chunk_id']
-                    })
-            
+                if similarities[idx] <= 0.01:
+                    continue
+                chunk_text = self.documents[idx]['text']
+                if chunk_text in seen_text:
+                    continue  # skip duplicate chunk, even if stored multiple times
+                seen_text.add(chunk_text)
+                results.append({
+                    'text': chunk_text,
+                    'metadata': self.documents[idx]['metadata'],
+                    'score': float(similarities[idx]),
+                    'chunk_id': self.documents[idx]['chunk_id']
+                })
+                if len(results) >= top_k:
+                    break
+
             return results
         except Exception as e:
             print(f"⚠️ Search error: {e}")
             return []
-    
     def get_context(self, query: str, top_k: int = 5) -> str:
         """Get context for RAG"""
         results = self.search(query, top_k)
         if not results:
             return "No relevant documents found."
+
+        # If even the best match is weak, say so honestly instead of presenting it as a confident answer
+        if results[0]['score'] < 0.15:
+            return "No strong match found in the knowledge base for this specific question. Try rephrasing, or ask about a topic more directly covered in your uploaded documents."
         
         parts = ["📚 **Relevant Information from Knowledge Base:**\n"]
         for i, r in enumerate(results, 1):

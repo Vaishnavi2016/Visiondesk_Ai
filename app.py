@@ -624,7 +624,7 @@ except ImportError:
     print("⚠️ Using dummy RAG")
 
 try:
-    from agent_workflows import visiondesk_agent
+    from agent_workflows_llm import visiondesk_agent
     print("✅ Agent System loaded")
 except ImportError:
     visiondesk_agent = DummyAgent()
