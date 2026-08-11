@@ -117,21 +117,22 @@
             .doc-meta-grid { grid-template-columns: 1fr; }
         }
     </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='redesign.css') }}">
 </head>
 <body>
     <nav class="navbar">
         <div class="navbar-brand">Vision<span>Desk</span></div>
         <div class="navbar-links">
-            <a href="{{ url_for('dashboard') }}">Dashboard</a>
+            <a href="{{ url_for('index') }}">Dashboard</a>
             <a href="{{ url_for('upload_feed') }}">Visual Feed</a>
-            <a href="{{ url_for('documents_page') }}">Documents</a>
+            <a href="{{ url_for('upload_document') }}">Documents</a>
             <a href="{{ url_for('search_knowledge') }}">Knowledge Search</a>
             <a href="{{ url_for('logout') }}">Logout</a>
         </div>
     </nav>
 
     <div class="container">
-        <a href="{{ url_for('documents_page') }}" class="back-link">← Back to Documents</a>
+        <a href="{{ url_for('upload_document') }}" class="back-link">← Back to Documents</a>
         
         {% set knowledge = document.get('knowledge_entry', {}) %}
         
@@ -200,9 +201,8 @@
             <h2>📝 Document Preview</h2>
             <div class="text-preview">
                 {{ knowledge.get('full_text', 'No content available')[:2000] }}
-                <!-- FIXED: Using |length filter instead of .length -->
-                {% if knowledge.get('full_text', '')|length > 2000 %}
-                <p style="color: #718096; margin-top: 0.5rem;">... (truncated, {{ knowledge.get('full_text', '')|length }} characters total)</p>
+                {% if knowledge.get('full_text', '').length > 2000 %}
+                <p style="color: #718096; margin-top: 0.5rem;">... (truncated, {{ knowledge.get('full_text', '').length }} characters total)</p>
                 {% endif %}
             </div>
         </div>

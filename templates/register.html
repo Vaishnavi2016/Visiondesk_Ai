@@ -359,6 +359,7 @@ text-decoration:underline;
             color: #ef4444;
         }
     </style>
+<link rel="stylesheet" href="{{ url_for('static', filename='redesign.css') }}">
 </head>
 <body>
     <div class="card-register">
@@ -385,22 +386,24 @@ text-decoration:underline;
             <input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">
 
             <!-- Username Field -->
-           <div class="input-group">
-    <i class="fa-solid fa-user"></i>
-    <input type="text" name="username" class="form-control" 
-       placeholder="Username (letters, numbers, underscore)"
-       pattern="[a-zA-Z0-9_]+"
-       title="Only letters, numbers, and underscores allowed"
-       required>
-</div>
+            <div class="input-group">
+                <i class="fa-solid fa-user"></i>
+                <input type="text" name="username" class="form-control" 
+                       placeholder="Username (letters, numbers, underscore)"
+                       value="{{ form.username.data if form.username.data else '' }}"
+                       pattern="[a-zA-Z0-9_]+"
+                       title="Only letters, numbers, and underscores allowed"
+                       required>
+            </div>
 
             <!-- Email Field -->
             <div class="input-group">
-    <i class="fa-solid fa-envelope"></i>
-    <input type="email" name="email" class="form-control" 
-       placeholder="Email Address"
-       required>
-</div>
+                <i class="fa-solid fa-envelope"></i>
+                <input type="email" name="email" class="form-control" 
+                       placeholder="Email Address"
+                       value="{{ form.email.data if form.email.data else '' }}"
+                       required>
+            </div>
 
             <!-- Password Field -->
             <div class="input-group">
