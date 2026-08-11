@@ -3,218 +3,695 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document Intelligence - VisionDesk</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
+    <title>Knowledge Search - VisionDesk AI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
-        body { background: #0a0e1a; color: #e2e8f0; }
-
-        :root {
-            --primary-gradient: linear-gradient(135deg, #7c3aed 0%, #f59e0b 100%);
-            --accent-purple: #a78bfa;
-            --accent-yellow: #fb923c;
-            --card-bg: rgba(255, 255, 255, 0.04);
-            --border-color: rgba(255, 255, 255, 0.06);
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
         }
 
-        .navbar {
-            background: rgba(15, 23, 42, 0.95);
-            backdrop-filter: blur(20px);
-            border-bottom: 1px solid var(--border-color);
-            padding: 1rem 2rem;
+        body {
+            background: #0a0e1a;
+            color: #e2e8f0;
+            min-height: 100vh;
+        }
+
+        /* ===== ANIMATED BACKGROUND ===== */
+        .bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .bg-animation .orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.3;
+            animation: orbFloat 20s ease-in-out infinite;
+        }
+
+        .bg-animation .orb:nth-child(1) {
+            width: 400px;
+            height: 400px;
+            background: #7c3aed;
+            top: -100px;
+            right: -100px;
+            animation-delay: 0s;
+        }
+
+        .bg-animation .orb:nth-child(2) {
+            width: 350px;
+            height: 350px;
+            background: #06b6d4;
+            bottom: -80px;
+            left: -80px;
+            animation-delay: -7s;
+        }
+
+        .bg-animation .orb:nth-child(3) {
+            width: 200px;
+            height: 200px;
+            background: #8b5cf6;
+            top: 50%;
+            left: 50%;
+            animation-delay: -14s;
+        }
+
+        @keyframes orbFloat {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            25% { transform: translate(30px, -50px) scale(1.1); }
+            50% { transform: translate(-20px, 30px) scale(0.9); }
+            75% { transform: translate(40px, 20px) scale(1.05); }
+        }
+
+        /* ===== MAIN CONTAINER ===== */
+        .container {
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 0 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* ===== HEADER ===== */
+        .header {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 16px;
         }
-        .navbar-brand { font-size: 1.5rem; font-weight: bold; }
-        .navbar-brand span { background: var(--primary-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .navbar-links a {
+
+        .header-left h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: #f1f5f9;
+        }
+
+        .header-left h1 i {
+            background: linear-gradient(135deg, #7c3aed, #06b6d4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-right: 12px;
+        }
+
+        .header-left p {
+            color: #94a3b8;
+            font-size: 14px;
+            margin-top: 4px;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .back-link {
             color: #94a3b8;
             text-decoration: none;
-            margin-left: 1.5rem;
-            padding: 0.5rem 1rem;
-            border-radius: 8px;
-            transition: all 0.3s;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 18px;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px;
+            transition: all 0.3s ease;
         }
-        .navbar-links a:hover, .navbar-links .active { background: rgba(124,58,237,0.15); color: var(--accent-purple); }
 
-        .container { max-width: 1400px; margin: 2rem auto; padding: 0 2rem; }
+        .back-link:hover {
+            background: rgba(124,58,237,0.15);
+            color: #e2e8f0;
+            border-color: rgba(124,58,237,0.2);
+        }
 
-        .page-header {
+        /* ===== SEARCH BOX ===== */
+        .search-container {
+            background: rgba(255, 255, 255, 0.04);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 16px;
+            padding: 32px 36px;
+            margin-bottom: 30px;
+        }
+
+        .search-form {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .search-form .input-group {
+            flex: 1;
+            min-width: 200px;
+            position: relative;
+        }
+
+        .search-form .input-group i {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #64748b;
+            font-size: 16px;
+        }
+
+        .search-form input[type="text"] {
+            width: 100%;
+            padding: 14px 16px 14px 48px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 2px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            color: #e2e8f0;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .search-form input[type="text"]:focus {
+            border-color: rgba(124, 58, 237, 0.4);
+            outline: none;
+            box-shadow: 0 0 30px rgba(124, 58, 237, 0.1);
+        }
+
+        .search-form input[type="text"]::placeholder {
+            color: #64748b;
+        }
+
+        .search-form select {
+            padding: 14px 20px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 2px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            color: #e2e8f0;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 160px;
+        }
+
+        .search-form select:focus {
+            border-color: rgba(124, 58, 237, 0.4);
+            outline: none;
+        }
+
+        .search-form select option {
+            background: #1a1a2e;
+            color: #e2e8f0;
+        }
+
+        .search-form button {
+            padding: 14px 32px;
+            background: linear-gradient(135deg, #7c3aed, #06b6d4);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            white-space: nowrap;
+        }
+
+        .search-form button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(124, 58, 237, 0.3);
+        }
+
+        .search-form button:active {
+            transform: translateY(0);
+        }
+
+        /* ===== SEARCH TIPS ===== */
+        .search-tips {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid rgba(255,255,255,0.06);
+        }
+
+        .search-tips .tip {
+            padding: 4px 12px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 20px;
+            font-size: 12px;
+            color: #94a3b8;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .search-tips .tip:hover {
+            background: rgba(124,58,237,0.15);
+            color: #a78bfa;
+        }
+
+        /* ===== RESULTS ===== */
+        .results-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 2rem;
+            margin-bottom: 20px;
             flex-wrap: wrap;
-            gap: 1rem;
+            gap: 10px;
         }
-        .page-title { font-size: 2rem; font-weight: 700; color: #f1f5f9; }
-        .page-subtitle { color: #94a3b8; font-size: 1rem; margin-top: 4px; }
 
-        .upload-section {
-            background: var(--card-bg);
-            border-radius: 16px;
-            padding: 2.5rem;
-            border: 2px dashed rgba(245, 158, 11, 0.3);
+        .results-header .count {
+            color: #94a3b8;
+            font-size: 14px;
+        }
+
+        .results-header .count strong {
+            color: #f1f5f9;
+        }
+
+        .results-header .search-type {
+            font-size: 12px;
+            color: #64748b;
+            background: rgba(255,255,255,0.05);
+            padding: 4px 14px;
+            border-radius: 20px;
+        }
+
+        .result-card {
+            background: rgba(255, 255, 255, 0.04);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 14px;
+            padding: 20px 24px;
+            margin-bottom: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .result-card:hover {
+            border-color: rgba(124, 58, 237, 0.2);
+            transform: translateX(4px);
+        }
+
+        .result-card .filename {
+            font-weight: 600;
+            font-size: 16px;
+            color: #f1f5f9;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .result-card .filename i {
+            color: #a78bfa;
+            font-size: 18px;
+        }
+
+        .result-card .snippet {
+            color: #94a3b8;
+            line-height: 1.6;
+            font-size: 14px;
+            margin-bottom: 12px;
+        }
+
+        .result-card .snippet .highlight {
+            background: rgba(124, 58, 237, 0.3);
+            color: #a78bfa;
+            padding: 0 4px;
+            border-radius: 3px;
+        }
+
+        .result-card .keywords {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 10px;
+        }
+
+        .result-card .keyword-tag {
+            background: rgba(255, 255, 255, 0.06);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            color: #94a3b8;
+            transition: all 0.3s ease;
+        }
+
+        .result-card .keyword-tag:hover {
+            background: rgba(124, 58, 237, 0.15);
+            color: #a78bfa;
+        }
+
+        .result-card .keyword-tag.category {
+            background: rgba(124, 58, 237, 0.15);
+            color: #a78bfa;
+            font-weight: 500;
+        }
+
+        .result-card .meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            padding-top: 12px;
+            border-top: 1px solid rgba(255,255,255,0.06);
+            font-size: 12px;
+            color: #64748b;
+        }
+
+        .result-card .meta span {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .result-card .meta span i {
+            font-size: 14px;
+        }
+
+        /* ===== EMPTY STATE ===== */
+        .empty-state {
             text-align: center;
-            margin-bottom: 2rem;
+            padding: 80px 20px;
+            color: #64748b;
+        }
+
+        .empty-state i {
+            font-size: 64px;
+            color: rgba(124, 58, 237, 0.3);
+            display: block;
+            margin-bottom: 20px;
+        }
+
+        .empty-state h3 {
+            color: #94a3b8;
+            font-size: 20px;
+            margin-bottom: 8px;
+        }
+
+        .empty-state p {
+            font-size: 14px;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        .empty-state .suggestions {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 16px;
+        }
+
+        .empty-state .suggestions .suggestion {
+            padding: 6px 16px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 20px;
+            font-size: 13px;
+            color: #94a3b8;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .empty-state .suggestions .suggestion:hover {
+            background: rgba(124,58,237,0.15);
+            color: #a78bfa;
+        }
+
+        /* ===== TOAST ===== */
+        .toast {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            padding: 14px 24px;
+            border-radius: 12px;
+            color: white;
+            font-weight: 500;
+            z-index: 9999;
+            transform: translateX(120%);
+            transition: transform 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            max-width: 420px;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.4);
             backdrop-filter: blur(12px);
         }
-        .upload-section h3 { color: #f1f5f9; margin-bottom: 0.5rem; }
-        .upload-section p { color: #94a3b8; margin-bottom: 1.5rem; }
-        
-        .file-input-wrapper { position: relative; display: inline-block; }
-        .file-input-wrapper input[type="file"] { position: absolute; left: 0; top: 0; opacity: 0; width: 100%; height: 100%; cursor: pointer; }
-        .file-input-label {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 0.85rem 2rem;
-            background: var(--primary-gradient);
-            color: white;
-            border-radius: 12px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-        .file-input-label i { order: 2; }
-        .file-input-label:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(245, 158, 11, 0.3); }
 
-        .documents-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 1.5rem; }
-        
-        .document-card {
-            background: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 16px;
-            padding: 1.5rem;
-            transition: all 0.3s;
-            border-left: 4px solid var(--accent-yellow);
-        }
-        .document-card:hover { transform: translateY(-4px); border-color: rgba(124, 58, 237, 0.3); }
-        .doc-filename { font-weight: 600; color: #f1f5f9; font-size: 1.1rem; margin-bottom: 0.5rem; }
-        .doc-meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; font-size: 0.85rem; color: #94a3b8; }
-        
-        .doc-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; gap: 0.5rem; }
-        .view-link { color: var(--accent-yellow); text-decoration: none; font-weight: 600; font-size: 0.875rem; display: inline-flex; align-items: center; gap: 6px; }
-        .view-link i { order: 2; }
-        
-        .delete-btn {
-            background: rgba(239, 68, 68, 0.15);
-            color: #f87171;
-            border: 1px solid rgba(239, 68, 68, 0.3);
-            padding: 0.5rem 1rem;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 0.8rem;
-            font-weight: 600;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            transition: 0.3s;
-        }
-        .delete-btn i { order: 2; }
-        .delete-btn:hover { background: rgba(239, 68, 68, 0.3); transform: translateY(-2px); }
-
-        .toast {
-            position: fixed; top: 20px; right: 20px; padding: 1rem 1.5rem; border-radius: 10px; color: white; font-weight: 500; z-index: 9999; transform: translateX(120%); transition: transform 0.5s ease;
-        }
         .toast.show { transform: translateX(0); }
-        .toast.success { background: rgba(245, 158, 11, 0.9); }
+        .toast.success { background: rgba(34, 197, 94, 0.9); }
         .toast.error { background: rgba(239, 68, 68, 0.9); }
+        .toast.info { background: rgba(124, 58, 237, 0.9); }
+        .toast.warning { background: rgba(251, 146, 60, 0.9); }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            .container { margin: 20px auto; }
+            .search-container { padding: 20px; }
+            .search-form { flex-direction: column; }
+            .search-form .input-group { min-width: 100%; }
+            .search-form select { width: 100%; }
+            .search-form button { width: 100%; justify-content: center; }
+            .header { flex-direction: column; align-items: flex-start; }
+            .header-right { width: 100%; }
+            .back-link { width: 100%; justify-content: center; }
+            .result-card { padding: 16px; }
+        }
+
+        @media (max-width: 480px) {
+            .search-container { padding: 16px; }
+            .results-header { flex-direction: column; align-items: flex-start; }
+        }
     </style>
-    <link rel="stylesheet" href="{{ url_for('static', filename='redesign.css') }}">
 </head>
 <body>
-    <nav class="navbar">
-        <div class="navbar-brand">Vision<span>Desk</span></div>
-        <div class="navbar-links">
-            <a href="{{ url_for('index') }}">Dashboard</a>
-            <a href="{{ url_for('upload_feed') }}">Visual Feed</a>
-            <a href="{{ url_for('upload_document') }}" class="active">Documents</a>
-            <a href="{{ url_for('search_knowledge') }}">Knowledge Search</a>
-            <a href="{{ url_for('logout') }}">Logout</a>
-        </div>
-    </nav>
 
+    <!-- ===== ANIMATED BACKGROUND ===== -->
+    <div class="bg-animation">
+        <div class="orb"></div>
+        <div class="orb"></div>
+        <div class="orb"></div>
+    </div>
+
+    <!-- ===== MAIN CONTAINER ===== -->
     <div class="container">
-        <div class="page-header">
-            <div>
-                <h1 class="page-title">Document Intelligence</h1>
-                <p class="page-subtitle">Automated processing of safety manuals and inspection reports</p>
+        
+        <!-- ===== HEADER ===== -->
+        <div class="header">
+            <div class="header-left">
+                <h1><i class="fa-solid fa-magnifying-glass"></i> Knowledge Search</h1>
+                <p>Search through uploaded documents and safety knowledge base</p>
             </div>
-            <div style="display: flex; gap: 1rem;">
-                <a href="{{ url_for('search_knowledge') }}" class="file-input-label" style="background: rgba(124, 58, 237, 0.2); border: 1px solid var(--accent-purple); color: white;">
-                    <span>Search KB</span> <i class="fa-solid fa-magnifying-glass"></i>
+            <div class="header-right">
+                <a href="/dashboard" class="back-link">
+                    <i class="fa-solid fa-arrow-left"></i> Dashboard
                 </a>
             </div>
         </div>
 
-        <div class="upload-section" id="uploadSection">
-            <h3>Upload Safety Document</h3>
-            <p>Upload inspection reports, safety manuals, incident reports, and compliance documents</p>
-            <div class="file-input-wrapper">
-                <input type="file" id="documentUpload" accept=".pdf,.docx,.txt,.html" multiple>
-                <label for="documentUpload" class="file-input-label"><span>Choose Documents</span> <i class="fa-solid fa-cloud-arrow-up"></i></label>
+        <!-- ===== SEARCH BOX ===== -->
+        <div class="search-container">
+            <form class="search-form" method="POST" action="/search-knowledge" id="searchForm">
+                <div class="input-group">
+                    <i class="fa-solid fa-search"></i>
+                    <input 
+                        type="text" 
+                        name="query" 
+                        placeholder="Search for safety documents, regulations, procedures..." 
+                        value="{{ query if query else '' }}"
+                        id="searchInput"
+                        required
+                    >
+                </div>
+                <select name="search_type" id="searchType">
+                    <option value="full_text" {% if search_type == 'full_text' %}selected{% endif %}>
+                        <i class="fa-solid fa-align-left"></i> Full Text
+                    </option>
+                    <option value="keyword" {% if search_type == 'keyword' %}selected{% endif %}>
+                        <i class="fa-solid fa-tags"></i> Keyword
+                    </option>
+                </select>
+                <button type="submit">
+                    <i class="fa-solid fa-magnifying-glass"></i> Search
+                </button>
+            </form>
+
+            <!-- Search Tips -->
+            <div class="search-tips">
+                <span style="color:#64748b; font-size:12px;">Quick searches:</span>
+                <span class="tip" onclick="quickSearch('PPE compliance')">PPE compliance</span>
+                <span class="tip" onclick="quickSearch('safety regulations')">Safety regulations</span>
+                <span class="tip" onclick="quickSearch('incident procedure')">Incident procedure</span>
+                <span class="tip" onclick="quickSearch('helmet safety')">Helmet safety</span>
+                <span class="tip" onclick="quickSearch('emergency response')">Emergency response</span>
+                <span class="tip" onclick="quickSearch('OSHA standards')">OSHA standards</span>
             </div>
         </div>
 
-        <h2 style="margin-bottom: 1.5rem; color: #f1f5f9;">Uploaded Documents</h2>
-        
-        {% if documents %}
-        <div class="documents-grid">
-            {% for doc in documents %}
-            <div class="document-card" id="doc-{{ doc._id|string }}">
-                <div class="doc-filename">{{ doc.filename }}</div>
-                <div class="doc-meta">
-                    <span>{{ doc.upload_date.strftime('%Y-%m-%d %H:%M') if doc.upload_date else 'N/A' }}</span>
-                    <span>Status: {{ doc.status }}</span>
+        <!-- ===== RESULTS ===== -->
+        {% if query %}
+            <div class="results-header">
+                <span class="count">
+                    Found <strong>{{ result_count }}</strong> result{% if result_count != 1 %}s{% endif %} for "{{ query }}"
+                </span>
+                <span class="search-type">
+                    <i class="fa-solid fa-filter"></i> 
+                    {{ 'Full Text' if search_type == 'full_text' else 'Keyword' }} Search
+                </span>
+            </div>
+
+            {% if results %}
+                {% for result in results %}
+                <div class="result-card">
+                    <div class="filename">
+                        <i class="fa-regular fa-file-lines"></i>
+                        {{ result.filename }}
+                    </div>
+                    
+                    {% if result.snippet %}
+                    <div class="snippet">
+                        {{ result.snippet | safe }}
+                    </div>
+                    {% endif %}
+
+                    {% if result.safety_keywords %}
+                    <div class="keywords">
+                        {% for category, keywords in result.safety_keywords.items() %}
+                            {% if keywords %}
+                                <span class="keyword-tag category">{{ category }}</span>
+                                {% for kw in keywords[:3] %}
+                                    <span class="keyword-tag">{{ kw }}</span>
+                                {% endfor %}
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <div class="meta">
+                        {% if result.upload_date %}
+                        <span>
+                            <i class="fa-regular fa-calendar"></i>
+                            {{ result.upload_date.strftime('%Y-%m-%d %H:%M') if result.upload_date else 'Unknown' }}
+                        </span>
+                        {% endif %}
+                        
+                        {% if result.matched_keywords %}
+                        <span>
+                            <i class="fa-regular fa-circle-check"></i>
+                            Matched: {{ result.matched_keywords|join(', ') }}
+                        </span>
+                        {% endif %}
+
+                        {% if result.metadata %}
+                            {% if result.metadata.sections %}
+                            <span>
+                                <i class="fa-regular fa-folder"></i>
+                                Sections: {{ result.metadata.sections|join(', ') }}
+                            </span>
+                            {% endif %}
+                        {% endif %}
+                    </div>
                 </div>
-                <div class="doc-actions">
-                    <a href="{{ url_for('view_document', doc_id=doc._id|string) }}" class="view-link"><span>View Details</span> <i class="fa-solid fa-arrow-right"></i></a>
-                    <button class="delete-btn" onclick="confirmDelete('{{ doc._id|string }}', '{{ doc.filename }}')">
-                        <span>Delete</span> <i class="fa-solid fa-trash-can"></i>
-                    </button>
+                {% endfor %}
+
+            {% else %}
+                <!-- ===== NO RESULTS ===== -->
+                <div class="empty-state">
+                    <i class="fa-regular fa-compass"></i>
+                    <h3>No Results Found</h3>
+                    <p>We couldn't find any documents matching "{{ query }}". Try adjusting your search terms.</p>
+                    <div class="suggestions">
+                        <span class="suggestion" onclick="quickSearch('safety')">safety</span>
+                        <span class="suggestion" onclick="quickSearch('PPE')">PPE</span>
+                        <span class="suggestion" onclick="quickSearch('helmet')">helmet</span>
+                        <span class="suggestion" onclick="quickSearch('compliance')">compliance</span>
+                        <span class="suggestion" onclick="quickSearch('procedure')">procedure</span>
+                    </div>
+                </div>
+            {% endif %}
+
+        {% else %}
+            <!-- ===== INITIAL STATE ===== -->
+            <div class="empty-state">
+                <i class="fa-regular fa-magnifying-glass"></i>
+                <h3>Search Knowledge Base</h3>
+                <p>Enter a search query above to find relevant safety documents, regulations, and procedures from your knowledge base.</p>
+                <div style="margin-top: 12px; font-size: 13px; color: #64748b;">
+                    <i class="fa-regular fa-lightbulb"></i> 
+                    Try searching for: PPE, safety regulations, incident reports, or compliance standards
                 </div>
             </div>
-            {% endfor %}
-        </div>
-        {% else %}
-        <div style="text-align: center; padding: 4rem; color: #64748b;">
-            <i class="fa-solid fa-folder-open" style="font-size: 48px; margin-bottom: 12px; display: block;"></i>
-            <p>No documents uploaded yet</p>
-        </div>
         {% endif %}
+
     </div>
 
+    <!-- ===== TOAST ===== -->
     <div class="toast" id="toast"></div>
 
+    <!-- ===== SCRIPTS ===== -->
     <script>
+        // ===== QUICK SEARCH =====
+        function quickSearch(query) {
+            document.getElementById('searchInput').value = query;
+            document.getElementById('searchForm').submit();
+        }
+
+        // ===== TOAST =====
         function showToast(message, type = 'info') {
             const toast = document.getElementById('toast');
             toast.textContent = message;
             toast.className = 'toast ' + type;
             toast.classList.add('show');
-            setTimeout(() => toast.classList.remove('show'), 4000);
+            setTimeout(() => { toast.classList.remove('show'); }, 4000);
         }
 
-        document.getElementById('documentUpload').addEventListener('change', function() {
-            const files = this.files;
-            if (files.length === 0) return;
-            const formData = new FormData();
-            for (let i = 0; i < files.length; i++) formData.append('document', files[i]);
-            
-            fetch('{{ url_for("upload_document") }}', { method: 'POST', body: formData })
-                .then(r => r.json())
-                .then(data => {
-                    if (data.success) {
-                        showToast('Document uploaded successfully', 'success');
-                        setTimeout(() => location.reload(), 1200);
-                    } else {
-                        showToast('Error: ' + data.error, 'error');
-                    }
-                });
+        // ===== SHOW STATUS ON PAGE LOAD =====
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check for flash messages
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        showToast('{{ message }}', '{{ category }}');
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            // Auto-focus search input if no query
+            {% if not query %}
+                document.getElementById('searchInput').focus();
+            {% endif %}
+        });
+
+        // ===== KEYBOARD SHORTCUTS =====
+        document.addEventListener('keydown', function(e) {
+            // Ctrl+K or Cmd+K to focus search
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                document.getElementById('searchInput').focus();
+            }
+            // Escape to clear search
+            if (e.key === 'Escape' && document.activeElement === document.getElementById('searchInput')) {
+                document.getElementById('searchInput').value = '';
+                document.getElementById('searchInput').blur();
+            }
+        });
+
+        // ===== SEARCH INPUT CLEAR BUTTON =====
+        const searchInput = document.getElementById('searchInput');
+        searchInput.addEventListener('input', function() {
+            if (this.value.length > 0) {
+                // Could add a clear button if needed
+            }
         });
     </script>
+
 </body>
-</html> 
+</html>
