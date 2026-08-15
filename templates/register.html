@@ -2,365 +2,274 @@
 <html lang="en">
 
 <head>
-
-<meta charset="UTF-8">
-
-<meta name="viewport"
-content="width=device-width,initial-scale=1.0">
-
-<title>VisionDesk AI | Register</title>
-
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-
-<link rel="stylesheet"
-href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-
-<style>
-
-*{
-
-margin:0;
-
-padding:0;
-
-box-sizing:border-box;
-
-font-family:Poppins,sans-serif;
-
-}
-
-body{
-
-height:100vh;
-
-display:flex;
-
-justify-content:center;
-
-align-items:center;
-
-background:#08111f;
-
-overflow:hidden;
-
-}
-
-/* Background */
-
-body::before{
-
-content:"";
-
-position:absolute;
-
-width:500px;
-
-height:500px;
-
-background:#2563eb;
-
-filter:blur(180px);
-
-border-radius:50%;
-
-top:-150px;
-
-left:-150px;
-
-opacity:.45;
-
-}
-
-body::after{
-
-content:"";
-
-position:absolute;
-
-width:450px;
-
-height:450px;
-
-background:#06b6d4;
-
-filter:blur(180px);
-
-border-radius:50%;
-
-bottom:-120px;
-
-right:-100px;
-
-opacity:.35;
-
-}
-
-/* Card */
-
-.card-register{
-
-width:460px;
-
-background:rgba(255,255,255,.08);
-
-backdrop-filter:blur(18px);
-
-border-radius:25px;
-
-padding:40px;
-
-border:1px solid rgba(255,255,255,.1);
-
-box-shadow:0 25px 60px rgba(0,0,0,.45);
-
-position:relative;
-
-z-index:5;
-
-animation:fade .7s;
-
-}
-
-@keyframes fade{
-
-from{
-
-opacity:0;
-
-transform:translateY(30px);
-
-}
-
-to{
-
-opacity:1;
-
-transform:translateY(0);
-
-}
-
-}
-
-.logo{
-
-width:90px;
-
-height:90px;
-
-margin:auto;
-
-border-radius:50%;
-
-background:linear-gradient(135deg,#2563eb,#06b6d4);
-
-display:flex;
-
-justify-content:center;
-
-align-items:center;
-
-font-size:38px;
-
-color:white;
-
-box-shadow:0 15px 35px rgba(37,99,235,.5);
-
-}
-
-h2{
-
-text-align:center;
-
-margin-top:18px;
-
-color:white;
-
-font-weight:700;
-
-}
-
-.subtitle{
-
-text-align:center;
-
-color:#cbd5e1;
-
-margin-bottom:30px;
-
-}
-
-.input-group{
-
-margin-bottom:18px;
-
-position:relative;
-
-}
-
-.input-group i{
-
-position:absolute;
-
-left:15px;
-
-top:17px;
-
-color:#38bdf8;
-
-}
-
-.form-control{
-
-height:52px;
-
-padding-left:45px;
-
-background:rgba(255,255,255,.08);
-
-border:none;
-
-color:white;
-
-}
-
-.form-control:focus{
-
-background:rgba(255,255,255,.12);
-
-color:white;
-
-box-shadow:0 0 0 .2rem rgba(37,99,235,.3);
-
-}
-
-.form-control::placeholder{
-
-color:#cbd5e1;
-
-}
-
-.eye{
-
-position:absolute;
-
-right:18px;
-
-top:17px;
-
-cursor:pointer;
-
-color:white;
-
-}
-
-.strength{
-
-height:8px;
-
-background:#1e293b;
-
-border-radius:10px;
-
-margin-top:10px;
-
-overflow:hidden;
-
-}
-
-.bar{
-
-height:100%;
-
-width:0;
-
-background:red;
-
-transition:.3s;
-
-}
-
-.btn-register{
-
-width:100%;
-
-height:54px;
-
-border:none;
-
-border-radius:12px;
-
-font-size:17px;
-
-font-weight:600;
-
-background:linear-gradient(90deg,#2563eb,#06b6d4);
-
-color:white;
-
-margin-top:20px;
-
-transition:.3s;
-
-}
-
-.btn-register:hover{
-
-transform:translateY(-3px);
-
-box-shadow:0 15px 35px rgba(37,99,235,.45);
-
-}
-
-.footer{
-
-text-align:center;
-
-margin-top:20px;
-
-color:#cbd5e1;
-
-}
-
-.footer a{
-
-color:#38bdf8;
-
-text-decoration:none;
-
-font-weight:600;
-
-}
-
-.footer a:hover{
-
-text-decoration:underline;
-
-}
- .password-hint {
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <title>VisionDesk AI | Register</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Poppins, sans-serif;
+        }
+
+        body {
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #08111f;
+            overflow: hidden;
+        }
+
+        /* Background */
+        body::before {
+            content: "";
+            position: absolute;
+            width: 500px;
+            height: 500px;
+            background: #2563eb;
+            filter: blur(180px);
+            border-radius: 50%;
+            top: -150px;
+            left: -150px;
+            opacity: .45;
+        }
+
+        body::after {
+            content: "";
+            position: absolute;
+            width: 450px;
+            height: 450px;
+            background: #06b6d4;
+            filter: blur(180px);
+            border-radius: 50%;
+            bottom: -120px;
+            right: -100px;
+            opacity: .35;
+        }
+
+        /* Card */
+        .card-register {
+            width: 460px;
+            background: rgba(255, 255, 255, .08);
+            backdrop-filter: blur(18px);
+            border-radius: 25px;
+            padding: 40px;
+            border: 1px solid rgba(255, 255, 255, .1);
+            box-shadow: 0 25px 60px rgba(0, 0, 0, .45);
+            position: relative;
+            z-index: 5;
+            animation: fade .7s;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .card-register::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        .card-register::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+        }
+
+        .card-register::-webkit-scrollbar-thumb {
+            background: #2563eb;
+            border-radius: 10px;
+        }
+
+        @keyframes fade {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .logo {
+            width: 90px;
+            height: 90px;
+            margin: auto;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #2563eb, #06b6d4);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 38px;
+            color: white;
+            box-shadow: 0 15px 35px rgba(37, 99, 235, .5);
+        }
+
+        h2 {
+            text-align: center;
+            margin-top: 18px;
+            color: white;
+            font-weight: 700;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #cbd5e1;
+            margin-bottom: 30px;
+        }
+
+        .input-group {
+            margin-bottom: 18px;
+            position: relative;
+        }
+
+        .input-group i {
+            position: absolute;
+            left: 15px;
+            top: 17px;
+            color: #38bdf8;
+        }
+
+        .form-control {
+            height: 52px;
+            padding-left: 45px;
+            background: rgba(255, 255, 255, .08);
+            border: 1px solid rgba(255, 255, 255, .1);
+            color: white;
+            border-radius: 12px;
+        }
+
+        .form-control:focus {
+            background: rgba(255, 255, 255, .12);
+            color: white;
+            box-shadow: 0 0 0 .2rem rgba(37, 99, 235, .3);
+            border-color: #2563eb;
+        }
+
+        .form-control::placeholder {
+            color: #94a3b8;
+        }
+
+        .eye {
+            position: absolute;
+            right: 18px;
+            top: 17px;
+            cursor: pointer;
+            color: #94a3b8;
+            transition: .3s;
+        }
+
+        .eye:hover {
+            color: #38bdf8;
+        }
+
+        .strength {
+            height: 8px;
+            background: #1e293b;
+            border-radius: 10px;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+
+        .bar {
+            height: 100%;
+            width: 0;
+            background: red;
+            transition: .3s;
+        }
+
+        .btn-register {
+            width: 100%;
+            height: 54px;
+            border: none;
+            border-radius: 12px;
+            font-size: 17px;
+            font-weight: 600;
+            background: linear-gradient(90deg, #2563eb, #06b6d4);
+            color: white;
+            margin-top: 20px;
+            transition: .3s;
+        }
+
+        .btn-register:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 35px rgba(37, 99, 235, .45);
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 20px;
+            color: #cbd5e1;
+        }
+
+        .footer a {
+            color: #38bdf8;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        .password-hint {
             font-size: 12px;
             color: #94a3b8;
             margin-top: 5px;
         }
+
         .password-hint ul {
             margin: 5px 0 0 20px;
             padding: 0;
         }
+
         .password-hint li {
             list-style: none;
             font-size: 12px;
             color: #64748b;
+            margin-bottom: 3px;
+            transition: .3s;
         }
+
         .password-hint li.valid {
             color: #22c55e;
         }
+
         .password-hint li.invalid {
             color: #ef4444;
         }
+
+        .alert {
+            border-radius: 12px;
+            margin-bottom: 15px;
+            padding: 12px 15px;
+            font-size: 14px;
+        }
+
+        .alert-danger {
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #fca5a5;
+        }
+
+        .alert-success {
+            background: rgba(34, 197, 94, 0.15);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            color: #86efac;
+        }
+
+        .alert-info {
+            background: rgba(56, 189, 248, 0.15);
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            color: #7dd3fc;
+        }
     </style>
-<link rel="stylesheet" href="{{ url_for('static', filename='redesign.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='redesign.css') }}">
 </head>
+
 <body>
     <div class="card-register">
         <div class="logo">
@@ -373,7 +282,7 @@ text-decoration:underline;
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
-                    <div class="alert alert-{{ 'danger' if category == 'error' else 'success' if category == 'success' else 'info' }}" style="border-radius: 12px; margin-bottom: 15px;">
+                    <div class="alert alert-{{ 'danger' if category == 'error' else 'success' if category == 'success' else 'info' }}">
                         <i class="fa-solid fa-{{ 'circle-exclamation' if category == 'error' else 'check-circle' if category == 'success' else 'info-circle' }}"></i>
                         {{ message }}
                     </div>
@@ -390,7 +299,7 @@ text-decoration:underline;
                 <i class="fa-solid fa-user"></i>
                 <input type="text" name="username" class="form-control" 
                        placeholder="Username (letters, numbers, underscore)"
-                       value="{{ form.username.data if form.username.data else '' }}"
+                       value="{{ request.form.get('username', '') }}"
                        pattern="[a-zA-Z0-9_]+"
                        title="Only letters, numbers, and underscores allowed"
                        required>
@@ -401,7 +310,7 @@ text-decoration:underline;
                 <i class="fa-solid fa-envelope"></i>
                 <input type="email" name="email" class="form-control" 
                        placeholder="Email Address"
-                       value="{{ form.email.data if form.email.data else '' }}"
+                       value="{{ request.form.get('email', '') }}"
                        required>
             </div>
 

@@ -1419,14 +1419,38 @@ def export_pdf():
         flash('PDF export requires xhtml2pdf. Install with: pip install xhtml2pdf', 'error')
         return redirect(url_for('dashboard'))
     
+    username = session.get('username')
     if records_col is not None:
-        records = list(records_col.find({'uploaded_by': session.get('username')}).sort('_id', -1))
+        records = list(records_col.find({'uploaded_by': username}).sort('_id', -1))
     else:
-        records = [r for r in STORAGE['records'] if r.get('uploaded_by') == session.get('username')]
+        records = [r for r in STORAGE['records'] if r.get('uploaded_by') == username]
     
     total = len(records)
     violations = sum(1 for r in records if r.get('status') == 'VIOLATION DETECTED')
     compliance = round(((total - violations) / total * 100) if total > 0 else 100)
+
+    # Format records for PDF (resolving local image paths for xhtml2pdf)
+    formatted_records = []
+    for r in records:
+        img_url = r.get('processed_url', '')
+        clean_rel_path = img_url.lstrip('/') if img_url.startswith('/') else img_url
+        abs_img_path = os.path.abspath(clean_rel_path)
+        
+        # Fallback to uploads folder if processed output path isn't found directly
+        if not os.path.exists(abs_img_path):
+            orig_file = r.get('file_name', '')
+            abs_img_path = os.path.abspath(os.path.join(UPLOAD_FOLDER, orig_file))
+            if not os.path.exists(abs_img_path):
+                abs_img_path = None
+
+        formatted_records.append({
+            'file_name': r.get('file_name', 'Unknown Image'),
+            'img_path': abs_img_path,
+            'status': r.get('status', 'UNKNOWN'),
+            'violations': r.get('violations', []),
+            'summary': r.get('summary', {}),
+            'upload_date': r.get('upload_date', datetime.now()).strftime("%Y-%m-%d %H:%M:%S") if isinstance(r.get('upload_date'), datetime) else str(r.get('upload_date', ''))
+        })
 
     report_template = """
     <!DOCTYPE html>
@@ -1434,40 +1458,109 @@ def export_pdf():
     <head>
         <meta charset="utf-8">
         <style>
-            body { font-family: Helvetica, Arial, sans-serif; color: #2d3748; }
-            .header { background: #1a365d; color: white; padding: 20px; text-align: center; }
-            .section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
-            table { width: 100%; border-collapse: collapse; }
-            th, td { padding: 8px; border: 1px solid #ddd; text-align: left; }
-            th { background: #edf2f7; }
-            .safe { color: green; font-weight: bold; }
-            .violation { color: red; font-weight: bold; }
+            @page {
+                size: A4 portrait;
+                margin: 12mm;
+            }
+            body { font-family: Helvetica, Arial, sans-serif; color: #1e293b; font-size: 11px; }
+            .header { background: #1a365d; color: white; padding: 14px; text-align: center; border-radius: 4px; margin-bottom: 15px; }
+            .header h1 { margin: 0 0 4px 0; font-size: 20px; }
+            .header p { margin: 2px 0; font-size: 10px; opacity: 0.9; }
+            
+            .section-title { font-size: 13px; font-weight: bold; color: #1a365d; border-bottom: 2px solid #cbd5e1; padding-bottom: 4px; margin-top: 15px; margin-bottom: 10px; }
+            
+            .stats-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
+            .stats-table td { padding: 6px 10px; border: 1px solid #cbd5e1; }
+            .stats-table .label { font-weight: bold; background: #f8fafc; width: 40%; }
+            
+            .record-card { margin-bottom: 15px; padding: 10px; border: 1px solid #cbd5e1; background: #ffffff; page-break-inside: avoid; }
+            .card-table { width: 100%; border-collapse: collapse; }
+            .card-table td { vertical-align: top; }
+            
+            .img-col { width: 45%; padding-right: 12px; }
+            .desc-col { width: 55%; }
+            
+            .detection-img { width: 100%; max-height: 170px; border-radius: 4px; border: 1px solid #e2e8f0; }
+            
+            .badge-safe { color: #15803d; font-weight: bold; background: #dcfce7; padding: 3px 8px; border-radius: 4px; display: inline-block; }
+            .badge-violation { color: #b91c1c; font-weight: bold; background: #fee2e2; padding: 3px 8px; border-radius: 4px; display: inline-block; }
+            
+            .counts-table { width: 100%; margin-top: 8px; margin-bottom: 8px; border-collapse: collapse; }
+            .counts-table td { padding: 4px 6px; border: 1px solid #e2e8f0; font-size: 10px; background: #f8fafc; }
+            
+            .violation-list { color: #dc2626; margin-top: 4px; padding-left: 15px; font-size: 10px; }
         </style>
     </head>
     <body>
         <div class="header">
             <h1>VisionDesk AI Compliance Report</h1>
-            <p>Generated: {{ date_str }}</p>
-            <p>User: {{ user }}</p>
+            <p>Generated: {{ date_str }} | User: {{ user }}</p>
         </div>
-        <div class="section">
-            <h2>Summary Statistics</h2>
-            <table>
-                <tr><td>Total Audits:</td><td>{{ total }}</td></tr>
-                <tr><td>Violations:</td><td>{{ violations }}</td></tr>
-                <tr><td>Compliance Rate:</td><td>{{ compliance }}%</td></tr>
+
+        <div class="section-title">Summary Statistics</div>
+        <table class="stats-table">
+            <tr><td class="label">Total Audits:</td><td>{{ total }}</td></tr>
+            <tr><td class="label">Violations Detected:</td><td>{{ violations }}</td></tr>
+            <tr><td class="label">Compliance Rate:</td><td><b>{{ compliance }}%</b></td></tr>
+        </table>
+
+        <div class="section-title">Detailed Visual Inspection Audits ({{ formatted_records|length }})</div>
+
+        {% for r in formatted_records %}
+        <div class="record-card">
+            <table class="card-table">
+                <tr>
+                    <td class="img-col">
+                        {% if r.img_path %}
+                            <img src="{{ r.img_path }}" class="detection-img" />
+                        {% else %}
+                            <div style="background:#f1f5f9; padding:40px 10px; text-align:center; color:#64748b;">[Image Unavailable]</div>
+                        {% endif %}
+                    </td>
+                    <td class="desc-col">
+                        <h3 style="margin:0 0 4px 0; font-size:12px; color:#0f172a;">{{ r.file_name }}</h3>
+                        <p style="margin:0 0 6px 0; color:#64748b; font-size:10px;">Audit Date: {{ r.upload_date }}</p>
+                        
+                        <div>
+                            {% if r.status == 'SAFE' %}
+                                <span class="badge-safe">SAFE</span>
+                            {% else %}
+                                <span class="badge-violation">VIOLATION DETECTED</span>
+                            {% endif %}
+                        </div>
+
+                        <table class="counts-table">
+                            <tr>
+                                <td><b>Workers:</b> {{ r.summary.get('workers', 0) }}</td>
+                                <td><b>Helmets:</b> {{ r.summary.get('helmets', 0) }}</td>
+                                <td><b>Vests:</b> {{ r.summary.get('vests', 0) }}</td>
+                            </tr>
+                        </table>
+
+                        {% if r.violations %}
+                            <div style="font-weight:bold; color:#b91c1c; margin-top:4px;">Flagged Issues:</div>
+                            <ul class="violation-list" style="margin:2px 0 0 0;">
+                                {% for v in r.violations %}
+                                    <li>{{ v }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </td>
+                </tr>
             </table>
         </div>
+        {% endfor %}
     </body>
     </html>
     """
     
     rendered_html = render_template_string(report_template,
-        user=session.get('username'),
+        user=username,
         date_str=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         total=total,
         violations=violations,
-        compliance=compliance
+        compliance=compliance,
+        formatted_records=formatted_records
     )
     
     pdf_buffer = io.BytesIO()
@@ -1477,7 +1570,7 @@ def export_pdf():
     
     response = make_response(pdf_bytes)
     response.headers['Content-Type'] = 'application/pdf'
-    response.headers['Content-Disposition'] = f'attachment; filename=Compliance_Report_{datetime.now().strftime("%Y%m%d")}.pdf'
+    response.headers['Content-Disposition'] = f'attachment; filename=Compliance_Report_{datetime.now().strftime("%Y%m%d_%H%M%S")}.pdf'
     return response
 
 @app.route('/export-knowledge-pdf')
