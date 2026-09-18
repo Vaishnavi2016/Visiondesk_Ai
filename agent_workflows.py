@@ -1,4 +1,4 @@
-# agent_workflows.py - NO LLM, Rule-Based Only
+# agent_workflows.py - NO LLM, Rule-Based Only (User-Scoped)
 
 import re
 from typing import Dict, Any, List
@@ -20,20 +20,20 @@ class VisionDeskAgent:
         print("✅ Agent connected to MongoDB")
     
     def process_query(self, query: str, user: str) -> Dict[str, Any]:
-        """Process user query with rule-based responses"""
+        """Process user query with rule-based responses strictly scoped to the logged-in user"""
         
         query_lower = query.lower().strip()
         incident_data = None
         tool_results = []
         response = None
         
-        print(f"📝 Processing query: {query}")
+        print(f"📝 Processing query for user '{user}': {query}")
         
         # ============================================
-        # GATHER DATA FROM DATABASE
+        # GATHER DATA FROM DATABASE (USER SCOPED)
         # ============================================
         
-        data = self._gather_data(query_lower)
+        data = self._gather_data(query_lower, user)
         rag_context = rag_system.get_context(query, top_k=3)
         
         # ============================================
@@ -79,20 +79,20 @@ class VisionDeskAgent:
             'llm_used': False
         }
     
-    def _gather_data(self, query_lower: str) -> Dict[str, Any]:
-        """Gather relevant data from database"""
+    def _gather_data(self, query_lower: str, user: str) -> Dict[str, Any]:
+        """Gather relevant user-scoped data from database"""
         data = {}
         
         # General stats
-        data['general_stats'] = self._get_general_stats()
+        data['general_stats'] = self._get_general_stats(user)
         
         # PPE stats if relevant
         if any(kw in query_lower for kw in ['ppe', 'helmet', 'vest', 'mask', 'compliance']):
-            data['ppe_stats'] = self._get_ppe_compliance_stats()
+            data['ppe_stats'] = self._get_ppe_compliance_stats(user)
         
         # Violations if relevant
         if any(kw in query_lower for kw in ['violation', 'violations', 'incident', 'hazard']):
-            data['violations'] = self._get_latest_violations(limit=10)
+            data['violations'] = self._get_latest_violations(user, limit=10)
         
         # Zone data if mentioned
         zone_match = re.search(r'zone\s*([a-z0-9]+)', query_lower, re.IGNORECASE)
@@ -100,13 +100,13 @@ class VisionDeskAgent:
             zone = zone_match.group(1).upper()
             data['zone_data'] = {
                 'zone': zone,
-                'data': self._get_zone_data(zone),
-                'violations': self._get_zone_violations(zone)
+                'data': self._get_zone_data(zone, user),
+                'violations': self._get_zone_violations(zone, user)
             }
         
         # Documents if relevant
         if any(kw in query_lower for kw in ['manual', 'policy', 'procedure', 'document']):
-            data['documents'] = self._search_documents(query_lower, limit=5)
+            data['documents'] = self._search_documents(query_lower, user, limit=5)
         
         return data
     
@@ -114,7 +114,6 @@ class VisionDeskAgent:
         """Generate rule-based response without LLM"""
         parts = []
         
-        # Check what data we have and format accordingly
         if data.get('zone_data'):
             zone_data = data['zone_data']
             zone = zone_data.get('zone', 'Unknown')
@@ -151,7 +150,6 @@ class VisionDeskAgent:
                 parts.append(f"   👷 Workers: {summary.get('workers', 0)} | ⛑️ Helmets: {summary.get('helmets', 0)} | 🦺 Vests: {summary.get('vests', 0)}")
                 parts.append("")
             
-            # Summary
             total_workers = sum(v.get('summary', {}).get('workers', 0) for v in violations)
             missing_helmets = sum(max(0, v.get('summary', {}).get('workers', 0) - v.get('summary', {}).get('helmets', 0)) for v in violations)
             missing_vests = sum(max(0, v.get('summary', {}).get('workers', 0) - v.get('summary', {}).get('vests', 0)) for v in violations)
@@ -223,22 +221,21 @@ class VisionDeskAgent:
             parts.append("• 'PPE compliance report'")
             parts.append("• 'Find safety manual'")
         
-        # Add context if available
         if context and "No relevant documents" not in context:
             parts.append(f"\n{context}")
         
         return "\n".join(parts)
     
     # ============================================
-    # DATABASE QUERY METHODS
+    # USER-SCOPED DATABASE QUERY METHODS
     # ============================================
     
-    def _get_general_stats(self):
+    def _get_general_stats(self, user: str):
         try:
-            total_audits = self.records_col.count_documents({})
-            violations = self.records_col.count_documents({'status': 'VIOLATION DETECTED'})
+            total_audits = self.records_col.count_documents({'uploaded_by': user})
+            violations = self.records_col.count_documents({'uploaded_by': user, 'status': 'VIOLATION DETECTED'})
             safe = total_audits - violations
-            documents = self.documents_col.count_documents({})
+            documents = self.documents_col.count_documents({'uploaded_by': user})
             
             return {
                 'total_audits': total_audits,
@@ -251,9 +248,9 @@ class VisionDeskAgent:
             print(f"Error getting general stats: {e}")
             return {}
     
-    def _get_ppe_compliance_stats(self):
+    def _get_ppe_compliance_stats(self, user: str):
         try:
-            records = list(self.records_col.find({}).sort('upload_date', -1).limit(100))
+            records = list(self.records_col.find({'uploaded_by': user}).sort('upload_date', -1).limit(100))
             
             total_workers = 0
             total_helmets = 0
@@ -284,9 +281,10 @@ class VisionDeskAgent:
             print(f"Error getting PPE stats: {e}")
             return {}
     
-    def _get_latest_violations(self, limit=10):
+    def _get_latest_violations(self, user: str, limit=10):
         try:
             records = list(self.records_col.find({
+                'uploaded_by': user,
                 'status': 'VIOLATION DETECTED'
             }).sort('upload_date', -1).limit(limit))
             return records
@@ -294,9 +292,10 @@ class VisionDeskAgent:
             print(f"Error getting violations: {e}")
             return []
     
-    def _get_zone_data(self, zone):
+    def _get_zone_data(self, zone: str, user: str):
         try:
             records = list(self.records_col.find({
+                'uploaded_by': user,
                 'file_name': {'$regex': f'zone[_\s]*{zone}', '$options': 'i'}
             }))
             
@@ -315,9 +314,10 @@ class VisionDeskAgent:
             print(f"Error getting zone data: {e}")
             return {}
     
-    def _get_zone_violations(self, zone):
+    def _get_zone_violations(self, zone: str, user: str):
         try:
             records = list(self.records_col.find({
+                'uploaded_by': user,
                 'file_name': {'$regex': f'zone[_\s]*{zone}', '$options': 'i'},
                 'status': 'VIOLATION DETECTED'
             }).sort('upload_date', -1).limit(10))
@@ -326,28 +326,29 @@ class VisionDeskAgent:
             print(f"Error getting zone violations: {e}")
             return []
     
-    def _search_documents(self, query, limit=5):
+    def _search_documents(self, query: str, user: str, limit=5):
         try:
             search_terms = re.sub(r'(safety|manual|policy|procedure|guideline|document|show|find|search|for|the|and|or|of|to|in|on|at)', '', query)
             search_terms = search_terms.strip()
             
             if not search_terms or len(search_terms) < 3:
-                docs = list(self.documents_col.find({}).sort('upload_date', -1).limit(limit))
+                docs = list(self.documents_col.find({'uploaded_by': user}).sort('upload_date', -1).limit(limit))
                 return docs
             
             docs = list(self.documents_col.find({
+                'uploaded_by': user,
                 '$or': [
                     {'filename': {'$regex': search_terms, '$options': 'i'}},
                     {'knowledge_entry.full_text': {'$regex': search_terms, '$options': 'i'}}
                 ]
             }).limit(limit))
             
-            return docs if docs else list(self.documents_col.find({}).sort('upload_date', -1).limit(3))
+            return docs if docs else list(self.documents_col.find({'uploaded_by': user}).sort('upload_date', -1).limit(3))
         except Exception as e:
             print(f"Error searching documents: {e}")
             return []
     
-    def _detect_action(self, query):
+    def _detect_action(self, query: str):
         query_lower = query.lower()
         if 'zone' in query_lower:
             return 'zone_investigation'
@@ -362,4 +363,4 @@ class VisionDeskAgent:
 
 # Create singleton
 visiondesk_agent = VisionDeskAgent()
-print("✅ VisionDesk Agent initialized (Rule-Based - No LLM)")
+print("✅ VisionDesk Agent initialized (Rule-Based - User-Scoped)")

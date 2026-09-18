@@ -148,12 +148,18 @@ class RAGSystem:
             query_vec = self.vectorizer.transform([query])
             similarities = cosine_similarity(query_vec, self.doc_vectors).flatten()
             
+
             # Search a wider pool so we still have enough candidates after removing duplicates
             top_indices = similarities.argsort()[-(top_k * 4):][::-1]
+
+
+            top_indices = similarities.argsort()[-top_k:][::-1]
+            
 
             results = []
             seen_text = set()
             for idx in top_indices:
+
                 if similarities[idx] <= 0.01:
                     continue
                 chunk_text = self.documents[idx]['text']
@@ -169,6 +175,16 @@ class RAGSystem:
                 if len(results) >= top_k:
                     break
 
+
+                if similarities[idx] > 0.01:
+                    results.append({
+                        'text': self.documents[idx]['text'],
+                        'metadata': self.documents[idx]['metadata'],
+                        'score': float(similarities[idx]),
+                        'chunk_id': self.documents[idx]['chunk_id']
+                    })
+            
+
             return results
         except Exception as e:
             print(f"⚠️ Search error: {e}")
@@ -179,9 +195,12 @@ class RAGSystem:
         if not results:
             return "No relevant documents found."
 
+
         # If even the best match is weak, say so honestly instead of presenting it as a confident answer
         if results[0]['score'] < 0.15:
             return "No strong match found in the knowledge base for this specific question. Try rephrasing, or ask about a topic more directly covered in your uploaded documents."
+
+
         
         parts = ["📚 **Relevant Information from Knowledge Base:**\n"]
         for i, r in enumerate(results, 1):

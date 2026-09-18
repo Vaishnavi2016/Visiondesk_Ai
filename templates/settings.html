@@ -66,18 +66,21 @@
         .toggle.active .handle { left: 25px; background: #a78bfa; }
         
         .btn {
-            padding: 8px 20px;
+            padding: 10px 22px;
             border: none;
             border-radius: 10px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
             font-size: 13px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
         }
-        .btn-primary { background: linear-gradient(135deg, #7c3aed, #06b6d4); color: white; }
-        .btn-primary:hover { transform: scale(1.02); box-shadow: 0 8px 25px rgba(124,58,237,0.3); }
-        .btn-danger { background: rgba(239,68,68,0.2); color: #f87171; }
-        .btn-danger:hover { background: rgba(239,68,68,0.3); }
+        .btn-primary { background: linear-gradient(135deg, #7c3aed, #10b981); color: white; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(124,58,237,0.3); }
+        .btn-danger { background: rgba(239,68,68,0.2); color: #f87171; border: 1px solid rgba(239,68,68,0.3); }
+        .btn-danger:hover { background: rgba(239,68,68,0.4); transform: scale(1.02); }
         
         .back-link {
             color: #94a3b8;
@@ -87,6 +90,7 @@
             gap: 8px;
             font-size: 14px;
             margin-bottom: 20px;
+            transition: color 0.2s;
         }
         .back-link:hover { color: #e2e8f0; }
         
@@ -111,7 +115,7 @@
             <h3><i class="fa-solid fa-sliders"></i> General</h3>
             <div class="setting-item">
                 <span class="label">Theme</span>
-                <span class="value">Dark <i class="fa-solid fa-moon" style="color:#a78bfa;"></i></span>
+                <span class="value">Dark <i class="fa-solid fa-moon" style="color:#a78bfa; margin-left:4px;"></i></span>
             </div>
             <div class="setting-item">
                 <span class="label">Language</span>
@@ -124,19 +128,19 @@
             <h3><i class="fa-regular fa-bell"></i> Notifications</h3>
             <div class="setting-item">
                 <span class="label">Email Alerts</span>
-                <div class="toggle active" onclick="this.classList.toggle('active')">
+                <div class="toggle active" id="toggle-email" onclick="this.classList.toggle('active')">
                     <div class="handle"></div>
                 </div>
             </div>
             <div class="setting-item">
                 <span class="label">Violation Alerts</span>
-                <div class="toggle active" onclick="this.classList.toggle('active')">
+                <div class="toggle active" id="toggle-violation" onclick="this.classList.toggle('active')">
                     <div class="handle"></div>
                 </div>
             </div>
             <div class="setting-item">
                 <span class="label">Weekly Reports</span>
-                <div class="toggle" onclick="this.classList.toggle('active')">
+                <div class="toggle" id="toggle-weekly" onclick="this.classList.toggle('active')">
                     <div class="handle"></div>
                 </div>
             </div>
@@ -144,20 +148,20 @@
 
         <!-- AI & Detection Settings -->
         <div class="settings-card">
-            <h3><i class="fa-solid fa-brain"></i> AI & Detection</h3>
+            <h3><i class="fa-solid fa-brain"></i> AI &amp; Detection</h3>
             <div class="setting-item">
                 <span class="label">PPE Detection Confidence</span>
-                <span class="value">0.35</span>
+                <span class="value" id="conf-display">0.55</span>
             </div>
             <div class="setting-item">
                 <span class="label">Auto-Save Results</span>
-                <div class="toggle active" onclick="this.classList.toggle('active')">
+                <div class="toggle active" id="toggle-autosave" onclick="this.classList.toggle('active')">
                     <div class="handle"></div>
                 </div>
             </div>
             <div class="setting-item">
                 <span class="label">Enable RAG</span>
-                <div class="toggle active" onclick="this.classList.toggle('active')">
+                <div class="toggle active" id="toggle-rag" onclick="this.classList.toggle('active')">
                     <div class="handle"></div>
                 </div>
             </div>
@@ -171,42 +175,122 @@
                 <span class="value">30 days</span>
             </div>
             <div class="setting-item" style="border-bottom: none;">
-                <span class="label">Clear All Data</span>
-                <button class="btn btn-danger" onclick="if(confirm('Delete all data?')){showToast('Data cleared!','success');}">
-                    <i class="fa-solid fa-trash-can"></i> Clear
+                <div>
+                    <span class="label" style="display:block; font-weight:600; color:#f1f5f9;">Clear All Data</span>
+                    <small style="color:#64748b;">Permanently delete all detection logs, knowledge chunks, and uploaded documents.</small>
+                </div>
+                <button class="btn btn-danger" id="clearBtn" onclick="handleClearData()">
+                    <i class="fa-solid fa-trash-can"></i> Clear All
                 </button>
             </div>
         </div>
 
         <!-- Actions -->
-        <div style="display:flex;gap:12px;margin-top:8px;flex-wrap:wrap;">
-            <button class="btn btn-primary" onclick="showToast('Settings saved! ✅','success')">
+        <div style="display:flex; gap:12px; margin-top:12px; flex-wrap:wrap;">
+            <button class="btn btn-primary" onclick="saveSettings()">
                 <i class="fa-solid fa-check"></i> Save Settings
             </button>
-            <button class="btn" style="background:rgba(255,255,255,0.05);color:#94a3b8;" onclick="showToast('Settings reset to default 🔄','info')">
-                <i class="fa-solid fa-rotate"></i> Reset Defaults
+            <button class="btn" style="background:rgba(255,255,255,0.08); color:#94a3b8;" onclick="resetDefaults()">
+                <i class="fa-solid fa-rotate-left"></i> Reset Defaults
             </button>
         </div>
     </div>
 
     <script>
+        // Toast Notification Function
         function showToast(msg, type='info') {
             const toast = document.createElement('div');
             toast.style.cssText = `
                 position: fixed; top: 20px; right: 20px; padding: 14px 24px;
                 border-radius: 12px; color: white; font-weight: 500;
-                z-index: 9999; background: ${type === 'success' ? 'rgba(34,197,94,0.9)' : type === 'error' ? 'rgba(239,68,68,0.9)' : 'rgba(124,58,237,0.9)'};
+                z-index: 9999; 
+                background: ${type === 'success' ? 'rgba(34,197,94,0.95)' : type === 'error' ? 'rgba(239,68,68,0.95)' : 'rgba(124,58,237,0.95)'};
                 border: 1px solid rgba(255,255,255,0.1);
                 box-shadow: 0 12px 40px rgba(0,0,0,0.4);
-                transform: translateX(120%); transition: transform 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-                max-width: 400px;
+                transform: translateX(120%); transition: transform 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+                max-width: 400px; backdrop-filter: blur(10px);
             `;
             toast.textContent = msg;
             document.body.appendChild(toast);
-            setTimeout(() => { toast.style.transform = 'translateX(0)'; }, 100);
-            setTimeout(() => { toast.style.transform = 'translateX(120%)'; }, 3500);
-            setTimeout(() => { toast.remove(); }, 4000);
+            setTimeout(() => { toast.style.transform = 'translateX(0)'; }, 50);
+            setTimeout(() => { toast.style.transform = 'translateX(120%)'; }, 3000);
+            setTimeout(() => { toast.remove(); }, 3500);
         }
+
+        // Save preferences to localStorage
+        function saveSettings() {
+            const settings = {
+                emailAlerts: document.getElementById('toggle-email')?.classList.contains('active'),
+                violationAlerts: document.getElementById('toggle-violation')?.classList.contains('active'),
+                weeklyReports: document.getElementById('toggle-weekly')?.classList.contains('active'),
+                autoSave: document.getElementById('toggle-autosave')?.classList.contains('active'),
+                enableRag: document.getElementById('toggle-rag')?.classList.contains('active')
+            };
+            localStorage.setItem('visiondesk_settings', JSON.stringify(settings));
+            showToast('Settings saved successfully! ✅', 'success');
+        }
+
+        // Reset toggles to default
+        function resetDefaults() {
+            if (confirm('Reset all settings to default values?')) {
+                localStorage.removeItem('visiondesk_settings');
+                document.getElementById('toggle-email').classList.add('active');
+                document.getElementById('toggle-violation').classList.add('active');
+                document.getElementById('toggle-weekly').classList.remove('active');
+                document.getElementById('toggle-autosave').classList.add('active');
+                document.getElementById('toggle-rag').classList.add('active');
+                showToast('Settings restored to defaults 🔄', 'info');
+            }
+        }
+
+        // Clear All Data API Handler
+        async function handleClearData() {
+            if (!confirm('⚠️ Are you sure you want to permanently clear all detection records and uploaded documents?')) {
+                return;
+            }
+
+            const btn = document.getElementById('clearBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Clearing...';
+
+            try {
+                const response = await fetch('/api/clear-all-data', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    showToast('All records cleared successfully! 🗑️', 'success');
+                    setTimeout(() => {
+                        window.location.href = '/dashboard';
+                    }, 1200);
+                } else {
+                    showToast('Error: ' + (data.error || 'Failed to clear data'), 'error');
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fa-solid fa-trash-can"></i> Clear All';
+                }
+            } catch (err) {
+                showToast('Network error while deleting data.', 'error');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-trash-can"></i> Clear All';
+            }
+        }
+
+        // Restore user preferences from localStorage on load
+        document.addEventListener('DOMContentLoaded', () => {
+            const saved = localStorage.getItem('visiondesk_settings');
+            if (saved) {
+                try {
+                    const parsed = JSON.parse(saved);
+                    if (parsed.emailAlerts !== undefined) document.getElementById('toggle-email').classList.toggle('active', parsed.emailAlerts);
+                    if (parsed.violationAlerts !== undefined) document.getElementById('toggle-violation').classList.toggle('active', parsed.violationAlerts);
+                    if (parsed.weeklyReports !== undefined) document.getElementById('toggle-weekly').classList.toggle('active', parsed.weeklyReports);
+                    if (parsed.autoSave !== undefined) document.getElementById('toggle-autosave').classList.toggle('active', parsed.autoSave);
+                    if (parsed.enableRag !== undefined) document.getElementById('toggle-rag').classList.toggle('active', parsed.enableRag);
+                } catch(e) {}
+            }
+        });
     </script>
 </body>
 </html>

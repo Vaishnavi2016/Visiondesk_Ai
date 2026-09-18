@@ -24,6 +24,7 @@
             background: #0f172a;
             padding: 30px 20px;
             border-right: 1px solid rgba(255,255,255,.05);
+            z-index: 100;
         }
         
         .logo {
@@ -51,7 +52,22 @@
             align-items: center;
             gap: 14px;
             transition: .3s;
+            position: relative;
         }
+        
+        /* Prevent duplicate icon overlapping from external CSS files */
+        .menu a::before, 
+        .menu a::after {
+            content: none !important;
+            display: none !important;
+        }
+
+        .menu a i {
+            width: 22px;
+            text-align: center;
+            font-size: 18px;
+        }
+
         .menu a:hover { background: #2563eb; color: white; transform: translateX(5px); }
         .menu a.active { background: linear-gradient(90deg, #7c3aed, #a78bfa); color: white; }
         
@@ -228,7 +244,6 @@
         ::-webkit-scrollbar-track { background: #0f172a; }
         ::-webkit-scrollbar-thumb { background: #7c3aed; border-radius: 10px; }
     </style>
-    <link rel="stylesheet" href="{{ url_for('static', filename='redesign.css') }}">
 </head>
 <body>
 
@@ -309,9 +324,6 @@
     </div>
 </div>
 
-<!-- ============================================ -->
-<!-- JAVASCRIPT - CORRECTLY PLACED AT THE END     -->
-<!-- ============================================ -->
 <script>
     const chatMessages = document.getElementById('chatMessages');
     const chatInput = document.getElementById('chatInput');
@@ -327,7 +339,6 @@
         const div = document.createElement('div');
         div.className = `message ${sender}`;
         
-        // Convert newlines to <br> and handle bold text
         let html = text
             .replace(/\n/g, '<br>')
             .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
@@ -366,16 +377,16 @@
         // Show typing indicator with context-specific message
         typingIndicator.classList.add('active');
         const queryLower = query.toLowerCase();
-        let statusMessage = '🔍 Analyzing your query...';
+        let statusMessage = '<i class="fa-solid fa-spinner fa-spin"></i> 🔍 Analyzing your query...';
         
         if (queryLower.includes('zone')) {
-            statusMessage = '📍 Investigating zone data...';
+            statusMessage = '<i class="fa-solid fa-spinner fa-spin"></i> 📍 Investigating zone data...';
         } else if (queryLower.includes('violation') || queryLower.includes('violations')) {
-            statusMessage = '🚨 Searching for violations...';
+            statusMessage = '<i class="fa-solid fa-spinner fa-spin"></i> 🚨 Searching for violations...';
         } else if (queryLower.includes('ppe') || queryLower.includes('compliance') || queryLower.includes('helmet') || queryLower.includes('vest')) {
-            statusMessage = '📊 Analyzing PPE compliance...';
+            statusMessage = '<i class="fa-solid fa-spinner fa-spin"></i> 📊 Analyzing PPE compliance...';
         } else if (queryLower.includes('manual') || queryLower.includes('policy') || queryLower.includes('procedure')) {
-            statusMessage = '📖 Searching documents...';
+            statusMessage = '<i class="fa-solid fa-spinner fa-spin"></i> 📖 Searching documents...';
         }
         typingIndicator.innerHTML = statusMessage;
 
@@ -392,7 +403,6 @@
             typingIndicator.classList.remove('active');
 
             if (data.response) {
-                // Show what action was taken
                 let sourceInfo = '🤖 VisionDesk Agent';
                 if (data.action) {
                     const actionLabels = {

@@ -1,5 +1,5 @@
 # agent_workflows_llm.py
-# Real LLM-powered, RAG-grounded, app-aware agent. No templates, no "====" dividers.
+# Real LLM-powered, RAG-grounded, app-aware agent with fast local fallbacks.
 
 import os
 import re
@@ -23,10 +23,6 @@ try:
 except ImportError:
     GOOGLE_AVAILABLE = False
 
-
-# Static primer describing the app itself, so questions like "what is this project",
-# "what can you do", "what is history/settings/export for" always get a correct answer
-# even when no specific keyword/data trigger matches.
 APP_DESCRIPTION = """VisionDesk AI is a workplace safety intelligence platform with these features:
 - Dashboard: live overview of total audits, violations, safe records, and overall compliance rate.
 - Upload Media: upload site photos/video; a YOLO computer-vision model automatically detects workers and PPE (helmets, vests, masks) and flags violations.
@@ -47,7 +43,7 @@ class VisionDeskLLMAgent:
         if provider == 'openai' and OPENAI_AVAILABLE:
             api_key = os.getenv('OPENAI_API_KEY')
             if api_key:
-                self.llm_client = OpenAI(api_key=api_key)
+                self.llm_client = OpenAI(api_key=api_key, timeout=7.0)
                 self.model_name = 'gpt-4o-mini'
                 print("✅ OpenAI initialized")
             else:
@@ -56,14 +52,14 @@ class VisionDeskLLMAgent:
             api_key = os.getenv('GOOGLE_API_KEY')
             if api_key:
                 genai.configure(api_key=api_key)
-                self.llm_client = genai.GenerativeModel('gemini-flash-latest')
-                self.model_name = 'gemini-flash-latest'
+                self.llm_client = genai.GenerativeModel('gemini-1.5-flash')
+                self.model_name = 'gemini-1.5-flash'
                 print("✅ Google Gemini initialized")
             else:
                 print("⚠️ GOOGLE_API_KEY not found in .env file")
 
         try:
-            self.client = MongoClient('mongodb://localhost:27017/')
+            self.client = MongoClient('mongodb://localhost:27017/', serverSelectionTimeoutMS=2000)
             self.db = self.client['visiondesk_db']
             self.records_col = self.db['visual_records']
             self.documents_col = self.db['documents']
@@ -80,24 +76,27 @@ class VisionDeskLLMAgent:
             return {'response': "Please enter a valid question.", 'query': query, 'action': 'error', 'tool_results': []}
 
         query_lower = query.lower().strip()
+        action = self._detect_action(query_lower)
 
+        # Fast direct responses for greetings
         if query_lower in ('hi', 'hello', 'hey', 'hii', 'hola', 'good morning', 'good afternoon', 'good evening'):
             return {
-                'response': f"Hi {username}! I'm VisionDesk AI. I can help with PPE compliance, recent violations, specific zones, uploaded documents, or general questions about how this app works. What would you like to know?",
+                'response': f"Hi {username}! I'm VisionDesk AI. I can help with PPE compliance, recent violations, specific zones, uploaded documents, or general safety workflows. What would you like to check?",
                 'query': query,
                 'action': 'greeting',
                 'tool_results': [{'type': 'greeting', 'status': 'success'}]
             }
 
-        context = self._gather_context(query_lower)
+        context = self._gather_context(query_lower, username)
         response_text = self._generate_response(query, context)
-        action = self._detect_action(query_lower)
 
         if any(kw in query_lower for kw in ['violation', 'incident', 'hazard']) and self.incidents_col is not None:
             try:
                 self.incidents_col.insert_one({
                     'timestamp': datetime.now().isoformat(),
-                    'query': query, 'user': username, 'status': 'reported'
+                    'query': query,
+                    'user': username,
+                    'status': 'reported'
                 })
             except Exception:
                 pass
@@ -109,12 +108,14 @@ class VisionDeskLLMAgent:
             'tool_results': [{'type': 'llm_grounded', 'status': 'success'}]
         }
 
-    def _gather_context(self, query_lower):
-        context = {'rag_results': [], 'ppe_stats': {}, 'zone_data': {}, 'violations': [],
-                   'dashboard_stats': {}, 'document_list': []}
+    def _gather_context(self, query_lower, username):
+        context = {
+            'rag_results': [], 'ppe_stats': {}, 'zone_data': {}, 'violations': [],
+            'dashboard_stats': {}, 'document_list': []
+        }
 
         try:
-            context['rag_results'] = rag_system.search(query_lower, top_k=4)
+            context['rag_results'] = rag_system.search(query_lower, top_k=3)
             print(f"📚 RAG retrieved {len(context['rag_results'])} relevant chunks")
         except Exception as e:
             print(f"⚠️ RAG search failed: {e}")
@@ -122,9 +123,10 @@ class VisionDeskLLMAgent:
         if self.records_col is None:
             return context
 
+        # 1. PPE Stats
         if any(kw in query_lower for kw in ['ppe', 'helmet', 'vest', 'mask', 'compliance']):
             try:
-                records = list(self.records_col.find({}).sort('upload_date', -1).limit(100))
+                records = list(self.records_col.find({'uploaded_by': username}).sort('_id', -1).limit(100))
                 workers = sum(r.get('summary', {}).get('workers', 0) for r in records)
                 helmets = sum(r.get('summary', {}).get('helmets', 0) for r in records)
                 vests = sum(r.get('summary', {}).get('vests', 0) for r in records)
@@ -138,30 +140,39 @@ class VisionDeskLLMAgent:
             except Exception as e:
                 print(f"⚠️ PPE stats failed: {e}")
 
+        # 2. Zone Lookup
         zone_match = re.search(r'zone\s*([a-z0-9]+)', query_lower, re.IGNORECASE)
         if zone_match:
             zone = zone_match.group(1).upper()
             try:
-                records = list(self.records_col.find({'file_name': {'$regex': f'zone[_ ]*{zone}', '$options': 'i'}}))
+                records = list(self.records_col.find({
+                    'uploaded_by': username,
+                    'file_name': {'$regex': f'zone[_ ]*{zone}', '$options': 'i'}
+                }))
                 total = len(records)
                 violations = sum(1 for r in records if r.get('status') == 'VIOLATION DETECTED')
                 context['zone_data'] = {'zone': zone, 'total': total, 'violations': violations}
             except Exception as e:
                 print(f"⚠️ Zone lookup failed: {e}")
 
+        # 3. Violations Lookup
         if any(kw in query_lower for kw in ['violation', 'incident', 'alert', 'hazard', 'recent']):
             try:
-                records = list(self.records_col.find({'status': 'VIOLATION DETECTED'}).sort('upload_date', -1).limit(5))
+                records = list(self.records_col.find({
+                    'uploaded_by': username,
+                    'status': 'VIOLATION DETECTED'
+                }).sort('_id', -1).limit(5))
                 context['violations'] = records
             except Exception as e:
                 print(f"⚠️ Violations lookup failed: {e}")
 
-        if any(kw in query_lower for kw in ['dashboard', 'overview', 'summary', 'site status', 'how are we doing', 'general stats']):
+        # 4. Dashboard Stats
+        if any(kw in query_lower for kw in ['dashboard', 'overview', 'summary', 'site status', 'general stats']):
             try:
-                total = self.records_col.count_documents({})
-                violations = self.records_col.count_documents({'status': 'VIOLATION DETECTED'})
+                total = self.records_col.count_documents({'uploaded_by': username})
+                violations = self.records_col.count_documents({'uploaded_by': username, 'status': 'VIOLATION DETECTED'})
                 safe = total - violations
-                compliance_pct = round(safe / total * 100) if total else 0
+                compliance_pct = round(safe / total * 100) if total else 100
                 context['dashboard_stats'] = {
                     'total': total, 'safe': safe, 'violations': violations,
                     'compliance_pct': compliance_pct,
@@ -170,12 +181,10 @@ class VisionDeskLLMAgent:
             except Exception as e:
                 print(f"⚠️ Dashboard stats lookup failed: {e}")
 
-        # Documents-list questions -- "what documents do we have", "list uploaded documents", etc.
-        if self.documents_col is not None and any(kw in query_lower for kw in
-                ['what documents', 'list documents', 'uploaded documents', 'how many documents',
-                 'which documents', 'documents do we have', 'documents uploaded']):
+        # 5. Document List
+        if self.documents_col is not None and any(kw in query_lower for kw in ['document', 'documents', 'manual']):
             try:
-                docs = list(self.documents_col.find({}).sort('upload_date', -1).limit(20))
+                docs = list(self.documents_col.find({'uploaded_by': username}).sort('_id', -1).limit(10))
                 context['document_list'] = [
                     {'filename': d.get('filename', 'Unknown'), 'upload_date': str(d.get('upload_date', ''))}
                     for d in docs
@@ -185,55 +194,112 @@ class VisionDeskLLMAgent:
 
         return context
 
-    def _generate_response(self, query, context):
-        if not self.llm_client:
-            return "⚠️ No LLM is configured. Please set OPENAI_API_KEY or GOOGLE_API_KEY in your .env file."
+    def _fallback_summary(self, query_lower, context):
+        """Generates instant, accurate data responses if LLM fails or is unconfigured."""
+        
+        # 1. Dashboard / Overview Stats
+        dash = context.get('dashboard_stats', {})
+        if dash and any(kw in query_lower for kw in ['dashboard', 'overview', 'summary', 'status', 'stats', 'how are we doing']):
+            return (
+                f"📊 **Dashboard Overview:**\n"
+                f"• Total Audits: **{dash.get('total', 0)}**\n"
+                f"• Safe Records: **{dash.get('safe', 0)}**\n"
+                f"• Violations Flagged: **{dash.get('violations', 0)}**\n"
+                f"• Compliance Rate: **{dash.get('compliance_pct', 0)}%**\n"
+                f"• Site Health Status: **{dash.get('status', 'Good')}**"
+            )
 
+        # 2. Recent Violations
+        violations = context.get('violations', [])
+        if any(kw in query_lower for kw in ['violation', 'violations', 'recent', 'alert']) and violations:
+            items = []
+            for v in violations:
+                issues = ', '.join(v.get('violations', [])) or 'Safety non-compliance'
+                items.append(f"• **{v.get('file_name', 'Audit Image')}**: {issues}")
+            return f"🚨 Found **{len(violations)} recent violation(s)** for your account:\n" + "\n".join(items)
+
+        # 3. PPE Breakdown
+        ppe = context.get('ppe_stats', {})
+        if ppe and any(kw in query_lower for kw in ['ppe', 'compliance', 'helmet', 'vest', 'mask']):
+            return (
+                f"🛡️ **PPE Compliance Breakdown:**\n"
+                f"• Total Workers Tracked: **{ppe.get('workers', 0)}**\n"
+                f"• Hard Hat / Helmet: **{ppe.get('helmets', 0)}** ({ppe.get('helmet_pct', 0)}%)\n"
+                f"• Hi-Vis Vest: **{ppe.get('vests', 0)}** ({ppe.get('vest_pct', 0)}%)\n"
+                f"• Face Masks: **{ppe.get('masks', 0)}** ({ppe.get('mask_pct', 0)}%)"
+            )
+
+        # 4. Zone Investigation
+        zone = context.get('zone_data', {})
+        if zone:
+            return f"📍 **Zone {zone.get('zone')} Status:** {zone.get('total', 0)} total audits registered with {zone.get('violations', 0)} violations flagged."
+
+        # 5. Documents / Knowledge Excerpts
+        rag = context.get('rag_results', [])
+        if rag:
+            excerpts = [f"• From *{r.get('metadata', {}).get('filename', 'Document')}*: {r.get('text', '')[:200]}..." for r in rag[:2]]
+            return "📖 **Relevant Document Findings:**\n" + "\n".join(excerpts)
+
+        # 6. Document List
+        doc_list = context.get('document_list', [])
+        if doc_list and any(kw in query_lower for kw in ['document', 'documents', 'manual', 'files']):
+            items = [f"• {d.get('filename')}" for d in doc_list]
+            return f"📄 **Uploaded Documents ({len(doc_list)}):**\n" + "\n".join(items)
+
+        # 7. General App Information
+        if any(kw in query_lower for kw in ['what is', 'how does', 'help', 'features', 'app', 'visiondesk']):
+            return (
+                "**VisionDesk AI Overview:**\n"
+                "VisionDesk AI is an intelligent workplace safety system. It detects workers and PPE (helmets, vests, masks) using computer vision, audits compliance against safety guidelines via document RAG, and generates real-time safety metrics and PDF reports."
+            )
+
+        return "No specific records or document excerpts matched your query. You can ask about **recent violations**, **PPE compliance**, **dashboard stats**, or upload safety documents to search."
+
+    def _generate_response(self, query, context):
+        query_lower = query.lower()
         context_str = self._format_context(context)
 
-        prompt = f"""You are VisionDesk AI, a workplace safety assistant embedded inside the VisionDesk app. Answer the user's question directly and conversationally -- like a knowledgeable colleague, not a generated report.
+        if not self.llm_client:
+            return self._fallback_summary(query_lower, context)
 
-ABOUT THIS APP (use this to answer any question about what the app/project is or does, its pages, or its features):
+        prompt = f"""You are VisionDesk AI, a workplace safety assistant embedded inside the VisionDesk app. Answer directly and concisely.
+
+ABOUT THIS APP:
 {APP_DESCRIPTION}
 
 RULES:
-- No "====" dividers, no markdown headers (#, ##), no "REPORT" titles.
-- Plain sentences, maybe one short bullet list if it truly helps. Nothing more.
-- Length: 3-6 sentences. Medium length -- not a one-liner, not an essay.
-- If the question is about THIS system's specific data (compliance numbers, violations, zones, uploaded documents, dashboard stats), you MUST use only the data given below and cite the source filename if from a document. Never invent numbers. If nothing relevant was retrieved for a data question, say so honestly.
-- If the question is about the app itself (what it does, what a page/feature is for), answer using the ABOUT THIS APP section above.
-- If the question is a general safety knowledge question (e.g. "what is PPE"), answer helpfully from your own knowledge, concisely, and weave in any relevant retrieved excerpt if one exists.
-- At most 1-2 emojis, only if they add clarity.
+- No markdown titles (#, ##) or divider lines (===).
+- 2-5 clear sentences or bullet points.
+- Use the retrieved data below if relevant. If no data exists, answer based on the app info or safety standards.
 
 User question: {query}
 
-Data retrieved for this query:
-{context_str}
-
-Now answer, following the rules exactly."""
+Data retrieved:
+{context_str}"""
 
         try:
             if self.provider == 'openai':
                 response = self.llm_client.chat.completions.create(
                     model=self.model_name,
                     messages=[{"role": "user", "content": prompt}],
-                    temperature=0.3, max_tokens=350
+                    temperature=0.3,
+                    max_tokens=300
                 )
                 text = response.choices[0].message.content
             else:
-                response = self.llm_client.generate_content(prompt)
+                response = self.llm_client.generate_content(
+                    prompt,
+                    request_options={'timeout': 6.0}
+                )
                 text = response.text
 
             text = re.sub(r'^=+$', '', text, flags=re.MULTILINE)
             text = re.sub(r'^#{1,6}\s*', '', text, flags=re.MULTILINE)
-            text = re.sub(r'\n{3,}', '\n\n', text).strip()
-            return text
+            return re.sub(r'\n{3,}', '\n\n', text).strip()
+
         except Exception as e:
-            error_str = str(e)
-            print(f"LLM error: {e}")
-            if 'quota' in error_str.lower() or '429' in error_str or 'rate' in error_str.lower():
-                return "⏳ I'm getting a lot of requests right now and hit a temporary rate limit. Please wait about a minute and try again."
-            return "I hit an error generating a response. Please try again."
+            print(f"⚠️ LLM Call timed out/failed ({e}), falling back to direct context summary.")
+            return self._fallback_summary(query_lower, context)
 
     def _format_context(self, context):
         parts = []
@@ -241,38 +307,26 @@ Now answer, following the rules exactly."""
         if rag_results:
             parts.append("Knowledge Base Excerpts:")
             for i, r in enumerate(rag_results, 1):
-                filename = r.get('metadata', {}).get('filename', 'Unknown Document')
-                parts.append(f"[{i}] {filename}: {r.get('text', '')[:350]}")
+                filename = r.get('metadata', {}).get('filename', 'Document')
+                parts.append(f"[{i}] {filename}: {r.get('text', '')[:300]}")
 
         ppe = context.get('ppe_stats', {})
         if ppe:
-            parts.append(f"\nPPE compliance -- Workers: {ppe.get('workers', 0)}, "
-                          f"Helmets: {ppe.get('helmets', 0)} ({ppe.get('helmet_pct', 0)}%), "
-                          f"Vests: {ppe.get('vests', 0)} ({ppe.get('vest_pct', 0)}%), "
-                          f"Masks: {ppe.get('masks', 0)} ({ppe.get('mask_pct', 0)}%)")
+            parts.append(f"\nPPE Compliance: Workers={ppe.get('workers', 0)}, Helmets={ppe.get('helmets', 0)} ({ppe.get('helmet_pct', 0)}%), Vests={ppe.get('vests', 0)} ({ppe.get('vest_pct', 0)}%)")
 
         dash = context.get('dashboard_stats', {})
         if dash:
-            parts.append(f"\nDashboard overview -- Total records: {dash.get('total', 0)}, "
-                          f"Safe: {dash.get('safe', 0)}, Violations: {dash.get('violations', 0)}, "
-                          f"Overall compliance: {dash.get('compliance_pct', 0)}%, "
-                          f"Site status: {dash.get('status', 'Unknown')}")
+            parts.append(f"\nDashboard: Total={dash.get('total', 0)}, Safe={dash.get('safe', 0)}, Violations={dash.get('violations', 0)}, Compliance={dash.get('compliance_pct', 0)}%")
 
         zone = context.get('zone_data', {})
         if zone:
-            parts.append(f"\nZone {zone.get('zone')}: {zone.get('total', 0)} records, {zone.get('violations', 0)} violations")
+            parts.append(f"\nZone {zone.get('zone')}: {zone.get('total', 0)} audits, {zone.get('violations', 0)} violations")
 
         violations = context.get('violations', [])
         if violations:
-            parts.append(f"\nRecent violations ({len(violations)}):")
+            parts.append(f"\nRecent Violations ({len(violations)}):")
             for v in violations[:5]:
-                parts.append(f"  - {v.get('file_name', 'Unknown')}: {', '.join(v.get('violations', []))}")
-
-        doc_list = context.get('document_list', [])
-        if doc_list:
-            parts.append(f"\nUploaded documents ({len(doc_list)}):")
-            for d in doc_list[:10]:
-                parts.append(f"  - {d.get('filename', 'Unknown')}")
+                parts.append(f" - {v.get('file_name', 'Audit')}: {', '.join(v.get('violations', []))}")
 
         return "\n".join(parts) if parts else "No specific data matched this query."
 
@@ -281,13 +335,11 @@ Now answer, following the rules exactly."""
             return 'zone_investigation'
         elif any(kw in query_lower for kw in ['dashboard', 'overview', 'summary']):
             return 'dashboard_overview'
-        elif any(kw in query_lower for kw in ['document', 'documents']):
+        elif any(kw in query_lower for kw in ['document', 'documents', 'manual']):
             return 'document_retrieval'
         elif any(kw in query_lower for kw in ['ppe', 'helmet', 'vest', 'mask', 'compliance']):
             return 'ppe_compliance'
-        elif any(kw in query_lower for kw in ['manual', 'policy', 'procedure']):
-            return 'document_retrieval'
-        elif any(kw in query_lower for kw in ['violation', 'incident', 'alert', 'hazard']):
+        elif any(kw in query_lower for kw in ['violation', 'incident', 'alert', 'hazard', 'recent']):
             return 'recent_violations'
         return 'general_query'
 
